@@ -235,6 +235,8 @@
 
         // Arrancar cargando los datos reales de Drive
         cargarRecuerdos();
+        // REFRESO AUTOMÁTICO: Busca nuevos mensajes en Google Drive cada 10 segundos
+        setInterval(cargarRecuerdos, 10000);
     </script>
 </body>
 </html>
