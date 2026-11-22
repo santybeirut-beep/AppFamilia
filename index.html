@@ -20,7 +20,7 @@
         
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         h1 { font-size: 24px; margin: 0; font-weight: 700; }
-        select.user-picker { 
+        .user-picker { 
             padding: 8px 12px; border-radius: 20px; border: 1px solid #D1D1D6; 
             background: var(--card-bg); font-weight: 600; color: var(--primary); font-size: 14px;
         }
@@ -60,13 +60,13 @@
 
     <header>
         <h1>Nuestro Rincón</h1>
-        <div id="badge-usuario" class="user-picker" style="font-weight: 600; color: #007AFF; cursor: default;">
+        <div id="badge-usuario" class="user-picker" style="cursor: default;">
             👤 Cargando...
         </div>
     </header>
 
     <!-- Pantalla de registro inicial (solo sale una vez por dispositivo) -->
-    <div id="pantalla-registro" style="display: none; background: #fff; padding: 20px; border-radius: 16px; margin: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+    <div id="pantalla-registro" style="display: none; background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
         <h2 style="margin-top: 0; font-size: 1.2rem; color: #1c1c1e;">¡Bienvenido a la familia! 👋</h2>
         <p style="color: #666; font-size: 0.95rem;">Selecciona quién eres para dejar este dispositivo configurado a tu nombre:</p>
         
@@ -106,19 +106,7 @@
     </div>
 
     <script>
-        // =========================================================================
-        // PEGA AQUÍ TU URL DE APPS SCRIPT ENTRE LAS COMILLAS:
         const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbw9spCdZVRk14DfetOYLCu1iU1xMrmN9xh3qGsfWvmHNh8hmqA9H5krpXgGRoomCZLAig/exec";
-        // =========================================================================
-
-        // Recordar quién eres en este dispositivo
-        const selectUsuario = document.getElementById('usuario');
-        if (localStorage.getItem('usuario_familia')) {
-            selectUsuario.value = localStorage.getItem('usuario_familia');
-        }
-        selectUsuario.addEventListener('change', () => {
-            localStorage.setItem('usuario_familia', selectUsuario.value);
-        });
 
         document.getElementById('fotoInput').addEventListener('change', function(e) {
             const nombre = e.target.files[0] ? e.target.files[0].name : '';
@@ -145,7 +133,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // Exportamos en JPEG calidad 0.6 para que quepa en una celda de Sheets
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                     callback(dataUrl);
                 };
@@ -167,7 +154,6 @@
                     return;
                 }
 
-                // Invertimos el orden para ver los más recientes arriba
                 datos.reverse().forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'card';
@@ -190,7 +176,7 @@
 
         // Enviar nuevo recuerdo a Google Sheets
         function publicarRecuerdo() {
-            const usuario = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
+            const autor = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
             const texto = document.getElementById('mensaje').value.trim();
             const lugar = document.getElementById('lugar').value.trim();
             const fotoFile = document.getElementById('fotoInput').files[0];
@@ -221,7 +207,6 @@
         async function enviarDatosAlServidor(payload) {
             const btn = document.getElementById('btnEnviar');
             try {
-                // Usamos mode: 'no-cors' porque Google Apps Script redirige al recibir POST
                 await fetch(URL_SCRIPT, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -229,13 +214,11 @@
                     body: JSON.stringify(payload)
                 });
 
-                // Limpiamos el formulario
                 document.getElementById('mensaje').value = '';
                 document.getElementById('lugar').value = '';
                 document.getElementById('fotoInput').value = '';
                 document.getElementById('nombreFoto').textContent = '';
 
-                // Esperamos un segundo para que Google termine de escribir y recargamos el muro
                 setTimeout(() => {
                     cargarRecuerdos();
                     btn.disabled = false;
@@ -249,23 +232,12 @@
             }
         }
 
-        // Arrancar cargando los datos reales de Drive
-        cargarRecuerdos();
-        // REFRESO AUTOMÁTICO: Busca nuevos mensajes en Google Drive cada 10 segundos
-        setInterval(cargarRecuerdos, 10000);
-        // Forzar actualización inmediata cuando vuelves a mirar la app en el móvil
-        document.addEventListener("visibilitychange", function() {
-            if (!document.hidden) {
-                cargarRecuerdos();
-            }
-        });
         // GESTIÓN DE IDENTIDAD FIJA POR DISPOSITIVO
         function comprobarIdentidad() {
             const usuarioGuardado = localStorage.getItem('appFamilia_usuario');
             const badge = document.getElementById('badge-usuario');
             const pantallaRegistro = document.getElementById('pantalla-registro');
 
-            // Seguridad por si algún elemento tarda un milisegundo más
             if (!badge || !pantallaRegistro) return;
 
             if (usuarioGuardado) {
