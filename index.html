@@ -237,6 +237,12 @@
         cargarRecuerdos();
         // REFRESO AUTOMÁTICO: Busca nuevos mensajes en Google Drive cada 10 segundos
         setInterval(cargarRecuerdos, 10000);
+        // Forzar actualización inmediata cuando vuelves a mirar la app en el móvil
+        document.addEventListener("visibilitychange", function() {
+            if (!document.hidden) {
+                cargarRecuerdos();
+            }
+        });
     </script>
 </body>
 </html>
