@@ -265,12 +265,13 @@
             const badge = document.getElementById('badge-usuario');
             const pantallaRegistro = document.getElementById('pantalla-registro');
 
+            // Seguridad por si algún elemento tarda un milisegundo más
+            if (!badge || !pantallaRegistro) return;
+
             if (usuarioGuardado) {
-                // El dispositivo ya tiene dueño asignado
                 badge.textContent = '👤 ' + usuarioGuardado;
                 pantallaRegistro.style.display = 'none';
             } else {
-                // Es la primera vez: pedimos que elija quién es
                 badge.textContent = '👤 Sin configurar';
                 pantallaRegistro.style.display = 'block';
             }
@@ -282,13 +283,23 @@
                 alert('Por favor, elige tu nombre de la lista.');
                 return;
             }
-            // Guardamos el nombre a fuego en la memoria del navegador
             localStorage.setItem('appFamilia_usuario', seleccion);
             comprobarIdentidad();
         }
 
-        // Comprobar identidad nada más abrir la app
-        comprobarIdentidad();
+        // Ejecutar solo cuando la página haya cargado por completo
+        window.onload = function() {
+            comprobarIdentidad();
+            cargarRecuerdos();
+            setInterval(cargarRecuerdos, 10000);
+        };
+
+        // Forzar actualización al volver a mirar la app
+        document.addEventListener("visibilitychange", function() {
+            if (!document.hidden) {
+                cargarRecuerdos();
+            }
+        });
     </script>
 </body>
 </html>
