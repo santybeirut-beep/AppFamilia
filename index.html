@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Familia">
+    <title>Nuestro Rincón Familiar</title>
+    <style>
+        :root {
+            --bg-color: #F2F2F7;
+            --card-bg: #FFFFFF;
+            --primary: #007AFF;
+            --text-main: #1C1C1E;
+            --text-sec: #8E8E93;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 16px; padding-bottom: 50px; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        h1 { font-size: 24px; margin: 0; font-weight: 700; }
+        select.user-picker { 
+            padding: 8px 12px; border-radius: 20px; border: 1px solid #D1D1D6; 
+            background: var(--card-bg); font-weight: 600; color: var(--primary); font-size: 14px;
+        }
+
+        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        
+        .daily-q { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; }
+        .daily-q small { text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; font-size: 11px; font-weight: 700; }
+        .daily-q p { font-size: 17px; font-weight: 600; margin: 8px 0 0 0; }
+
+        textarea, input[type="text"] {
+            width: 100%; border: 1px solid #E5E5EA; border-radius: 12px; padding: 12px;
+            font-size: 16px; margin-bottom: 10px; background: #F9F9FB; resize: none;
+        }
+        .form-row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+        .file-label {
+            display: inline-block; padding: 10px 14px; background: #E5E5EA; color: var(--text-main);
+            border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+        }
+        input[type="file"] { display: none; }
+        button.btn-send {
+            width: 100%; background: var(--primary); color: white; border: none; padding: 14px;
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+        button.btn-send:disabled { background: #A2CFFE; cursor: not-allowed; }
+
+        .post-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+        .post-author { font-weight: 700; color: var(--primary); }
+        .post-meta { color: var(--text-sec); }
+        .post-location { display: inline-block; background: #F2F2F7; padding: 4px 10px; border-radius: 8px; font-size: 12px; color: #3A3A3C; margin-bottom: 8px; }
+        .post-text { font-size: 16px; line-height: 1.4; margin: 0 0 10px 0; }
+        .post-img { width: 100%; border-radius: 12px; max-height: 320px; object-fit: cover; }
+        .loader { text-align: center; color: var(--text-sec); padding: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Nuestro Rincón</h1>
+        <select id="usuario" class="user-picker">
+            <option value="Capi (Recién jubilado)">👤 Yo (Capi)</option>
+            <option value="Familia 1">👤 Familia 1</option>
+            <option value="Familia 2">👤 Familia 2</option>
+        </select>
+    </header>
+
+    <div class="card daily-q">
+        <small>💡 Pregunta del día</small>
+        <p id="preguntaTexto">¿Cuál es el mejor recuerdo que tienes de nuestras vacaciones juntos?</p>
+    </div>
+
+    <div class="card">
+        <textarea id="mensaje" rows="2" placeholder="Escribe una nota, respuesta o recuerdo..."></textarea>
+        <div class="form-row">
+            <input type="text" id="lugar" placeholder="📍 ¿Dónde? (ej. Casa, Pozuelo...)" style="margin-bottom:0;">
+            <label class="file-label">
+                📷 Foto
+                <input type="file" id="fotoInput" accept="image/*">
+            </label>
+        </div>
+        <div id="nombreFoto" style="font-size: 12px; color: var(--primary); margin-bottom: 8px;"></div>
+        <button id="btnEnviar" class="btn-send" onclick="publicarRecuerdo()">Publicar en el tablón</button>
+    </div>
+
+    <div id="muro">
+        <div class="loader">Cargando recuerdos desde Google Drive...</div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // PEGA AQUÍ TU URL DE APPS SCRIPT ENTRE LAS COMILLAS:
+        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbw9spCdZVRk14DfetOYLCu1iU1xMrmN9xh3qGsfWvmHNh8hmqA9H5krpXgGRoomCZLAig/exec";
+        // =========================================================================
+
+        // Recordar quién eres en este dispositivo
+        const selectUsuario = document.getElementById('usuario');
+        if (localStorage.getItem('usuario_familia')) {
+            selectUsuario.value = localStorage.getItem('usuario_familia');
+        }
+        selectUsuario.addEventListener('change', () => {
+            localStorage.setItem('usuario_familia', selectUsuario.value);
+        });
+
+        document.getElementById('fotoInput').addEventListener('change', function(e) {
+            const nombre = e.target.files[0] ? e.target.files[0].name : '';
+            document.getElementById('nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
+        });
+
+        // Función para comprimir la foto antes de enviarla a Google Sheets
+        function comprimirImagen(file, maxWidth, callback) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Exportamos en JPEG calidad 0.6 para que quepa en una celda de Sheets
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                    callback(dataUrl);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Cargar recuerdos desde Google Sheets
+        async function cargarRecuerdos() {
+            const muro = document.getElementById('muro');
+            try {
+                const respuesta = await fetch(URL_SCRIPT);
+                const datos = await respuesta.json();
+                
+                muro.innerHTML = '';
+                if (datos.length === 0) {
+                    muro.innerHTML = '<div class="loader">Aún no hay recuerdos. ¡Estrena el tablón!</div>';
+                    return;
+                }
+
+                // Invertimos el orden para ver los más recientes arriba
+                datos.reverse().forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.innerHTML = `
+                        <div class="post-header">
+                            <span class="post-author">${item.autor}</span>
+                            <span class="post-meta">${item.fecha}</span>
+                        </div>
+                        ${item.lugar ? `<div class="post-location">📍 ${item.lugar}</div>` : ''}
+                        <p class="post-text">${item.texto}</p>
+                        ${item.imagen ? `<img src="${item.imagen}" class="post-img">` : ''}
+                    `;
+                    muro.appendChild(div);
+                });
+            } catch (error) {
+                console.error(error);
+                muro.innerHTML = '<div class="loader">Error al conectar con Google Drive. Revisa la URL del script.</div>';
+            }
+        }
+
+        // Enviar nuevo recuerdo a Google Sheets
+        function publicarRecuerdo() {
+            const autor = document.getElementById('usuario').value;
+            const texto = document.getElementById('mensaje').value.trim();
+            const lugar = document.getElementById('lugar').value.trim();
+            const fotoFile = document.getElementById('fotoInput').files[0];
+
+            if (!texto && !fotoFile) {
+                alert("Escribe un pequeño mensaje o elige una foto primero.");
+                return;
+            }
+
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.textContent = "Guardando en Drive...";
+
+            const ahora = new Date();
+            const fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ', ' + 
+                                    ahora.getHours().toString().padStart(2, '0') + ':' + 
+                                    ahora.getMinutes().toString().padStart(2, '0');
+
+            if (fotoFile) {
+                comprimirImagen(fotoFile, 450, (imagenBase64) => {
+                    enviarDatosAlServidor({ fecha: fechaFormateada, autor, lugar, texto, imagen: imagenBase64 });
+                });
+            } else {
+                enviarDatosAlServidor({ fecha: fechaFormateada, autor, lugar, texto, imagen: "" });
+            }
+        }
+
+        async function enviarDatosAlServidor(payload) {
+            const btn = document.getElementById('btnEnviar');
+            try {
+                // Usamos mode: 'no-cors' porque Google Apps Script redirige al recibir POST
+                await fetch(URL_SCRIPT, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Limpiamos el formulario
+                document.getElementById('mensaje').value = '';
+                document.getElementById('lugar').value = '';
+                document.getElementById('fotoInput').value = '';
+                document.getElementById('nombreFoto').textContent = '';
+
+                // Esperamos un segundo para que Google termine de escribir y recargamos el muro
+                setTimeout(() => {
+                    cargarRecuerdos();
+                    btn.disabled = false;
+                    btn.textContent = "Publicar en el tablón";
+                }, 1500);
+
+            } catch (error) {
+                alert("Hubo un problema al guardar. Inténtalo de nuevo.");
+                btn.disabled = false;
+                btn.textContent = "Publicar en el tablón";
+            }
+        }
+
+        // Arrancar cargando los datos reales de Drive
+        cargarRecuerdos();
+    </script>
+</body>
+</html>
