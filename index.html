@@ -60,13 +60,29 @@
 
     <header>
         <h1>Nuestro Rincón</h1>
-        <select id="usuario" class="user-picker">
-            <option value="Capi (Recién jubilado)">👤 Yo (Capi)</option>
-            <option value="Familia 1">👤 Familia 1</option>
-            <option value="Familia 2">👤 Familia 2</option>
-        </select>
+        <div id="badge-usuario" class="user-picker" style="font-weight: 600; color: #007AFF; cursor: default;">
+            👤 Cargando...
+        </div>
     </header>
 
+    <!-- Pantalla de registro inicial (solo sale una vez por dispositivo) -->
+    <div id="pantalla-registro" style="display: none; background: #fff; padding: 20px; border-radius: 16px; margin: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+        <h2 style="margin-top: 0; font-size: 1.2rem; color: #1c1c1e;">¡Bienvenido a la familia! 👋</h2>
+        <p style="color: #666; font-size: 0.95rem;">Selecciona quién eres para dejar este dispositivo configurado a tu nombre:</p>
+        
+        <select id="selector-inicial" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px; background: #f9f9f9;">
+            <option value="">-- Elige tu nombre --</option>
+            <option value="Santy">Santy</option>
+            <option value="Rosarin">Rosarin</option>
+            <option value="Peque">Peque</option>
+            <option value="Pam">Pam</option>
+        </select>
+
+        <button onclick="guardarIdentidad()" style="width: 100%; padding: 12px; background: #007AFF; color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+            Guardar mi nombre
+        </button>
+    </div>
+    
     <div class="card daily-q">
         <small>💡 Pregunta del día</small>
         <p id="preguntaTexto">¿Cuál es el mejor recuerdo que tienes de nuestras vacaciones juntos?</p>
@@ -174,7 +190,7 @@
 
         // Enviar nuevo recuerdo a Google Sheets
         function publicarRecuerdo() {
-            const autor = document.getElementById('usuario').value;
+            const usuario = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
             const texto = document.getElementById('mensaje').value.trim();
             const lugar = document.getElementById('lugar').value.trim();
             const fotoFile = document.getElementById('fotoInput').files[0];
@@ -243,6 +259,36 @@
                 cargarRecuerdos();
             }
         });
+        // GESTIÓN DE IDENTIDAD FIJA POR DISPOSITIVO
+        function comprobarIdentidad() {
+            const usuarioGuardado = localStorage.getItem('appFamilia_usuario');
+            const badge = document.getElementById('badge-usuario');
+            const pantallaRegistro = document.getElementById('pantalla-registro');
+
+            if (usuarioGuardado) {
+                // El dispositivo ya tiene dueño asignado
+                badge.textContent = '👤 ' + usuarioGuardado;
+                pantallaRegistro.style.display = 'none';
+            } else {
+                // Es la primera vez: pedimos que elija quién es
+                badge.textContent = '👤 Sin configurar';
+                pantallaRegistro.style.display = 'block';
+            }
+        }
+
+        function guardarIdentidad() {
+            const seleccion = document.getElementById('selector-inicial').value;
+            if (!seleccion) {
+                alert('Por favor, elige tu nombre de la lista.');
+                return;
+            }
+            // Guardamos el nombre a fuego en la memoria del navegador
+            localStorage.setItem('appFamilia_usuario', seleccion);
+            comprobarIdentidad();
+        }
+
+        // Comprobar identidad nada más abrir la app
+        comprobarIdentidad();
     </script>
 </body>
 </html>
