@@ -27,9 +27,24 @@
 
         .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         
-        .daily-q { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; }
+        .daily-q { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; position: relative; }
+        .daily-q-header { display: flex; justify-content: space-between; align-items: center; }
         .daily-q small { text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; font-size: 11px; font-weight: 700; }
-        .daily-q p { font-size: 17px; font-weight: 600; margin: 8px 0 0 0; }
+        .daily-q p { font-size: 17px; font-weight: 600; margin: 8px 0 0 0; line-height: 1.35; }
+        
+        .btn-edit-q {
+            background: rgba(255, 255, 255, 0.2); border: none; color: white;
+            border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        .edit-q-box { margin-top: 12px; display: none; }
+        .edit-q-box textarea {
+            background: rgba(255, 255, 255, 0.95); color: #1C1C1E; border: none;
+            margin-bottom: 8px; font-size: 15px;
+        }
+        .btn-save-q {
+            background: #FFFFFF; color: #007AFF; border: none; padding: 8px 14px;
+            border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;
+        }
 
         textarea, input[type="text"] {
             width: 100%; border: 1px solid #E5E5EA; border-radius: 12px; padding: 12px;
@@ -65,7 +80,7 @@
         </div>
     </header>
 
-    <!-- Pantalla de registro inicial (solo sale una vez por dispositivo) -->
+    <!-- Pantalla de registro inicial -->
     <div id="pantalla-registro" style="display: none; background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
         <h2 style="margin-top: 0; font-size: 1.2rem; color: #1c1c1e;">¡Bienvenido a la familia! 👋</h2>
         <p style="color: #666; font-size: 0.95rem;">Selecciona quién eres para dejar este dispositivo configurado a tu nombre:</p>
@@ -83,9 +98,19 @@
         </button>
     </div>
     
+    <!-- Tarjeta de Pregunta / Saludo del día -->
     <div class="card daily-q">
-        <small>💡 Pregunta del día</small>
-        <p id="preguntaTexto">¿Cuál es el mejor recuerdo que tienes de nuestras vacaciones juntos?</p>
+        <div class="daily-q-header">
+            <small>💡 El tema de hoy</small>
+            <button id="btnEditarPregunta" class="btn-edit-q" style="display: none;" onclick="toggleEditorPregunta()">✏️ Cambiar</button>
+        </div>
+        <p id="preguntaTexto">Cargando tema del día...</p>
+        
+        <!-- Caja oculta solo para el administrador (Santy) -->
+        <div id="cajaEditorPregunta" class="edit-q-box">
+            <textarea id="inputNuevaPregunta" rows="2" placeholder="Escribe el saludo o pregunta de hoy..."></textarea>
+            <button id="btnGuardarPregunta" class="btn-save-q" onclick="guardarNuevaPregunta()">Actualizar para todos</button>
+        </div>
     </div>
 
     <div class="card">
@@ -113,7 +138,6 @@
             document.getElementById('nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
         });
 
-        // Función para comprimir la foto antes de enviarla a Google Sheets
         function comprimirImagen(file, maxWidth, callback) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -141,14 +165,21 @@
             reader.readAsDataURL(file);
         }
 
-        // Cargar recuerdos desde Google Sheets
+        // Cargar pregunta del día y recuerdos desde Google Sheets
         async function cargarRecuerdos() {
             const muro = document.getElementById('muro');
             try {
                 const respuesta = await fetch(URL_SCRIPT);
-                const datos = await respuesta.json();
+                const paquete = await respuesta.json();
                 
+                // Actualizamos la pregunta del día si viene en la respuesta
+                if (paquete.pregunta) {
+                    document.getElementById('preguntaTexto').textContent = paquete.pregunta;
+                }
+
+                const datos = paquete.recuerdos || [];
                 muro.innerHTML = '';
+                
                 if (datos.length === 0) {
                     muro.innerHTML = '<div class="loader">Aún no hay recuerdos. ¡Estrena el tablón!</div>';
                     return;
@@ -174,7 +205,49 @@
             }
         }
 
-        // Enviar nuevo recuerdo a Google Sheets
+        // Mostrar/ocultar el editor de pregunta para Santy
+        function toggleEditorPregunta() {
+            const caja = document.getElementById('cajaEditorPregunta');
+            const textoActual = document.getElementById('preguntaTexto').textContent;
+            if (caja.style.display === 'block') {
+                caja.style.display = 'none';
+            } else {
+                document.getElementById('inputNuevaPregunta').value = textoActual;
+                caja.style.display = 'block';
+            }
+        }
+
+        // Enviar la nueva pregunta del día a Google Sheets
+        async function guardarNuevaPregunta() {
+            const nuevaPregunta = document.getElementById('inputNuevaPregunta').value.trim();
+            if (!nuevaPregunta) return;
+
+            const btn = document.getElementById('btnGuardarPregunta');
+            btn.disabled = true;
+            btn.textContent = "Guardando...";
+
+            try {
+                await fetch(URL_SCRIPT, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: "cambiar_pregunta",
+                        pregunta: nuevaPregunta
+                    })
+                });
+
+                document.getElementById('preguntaTexto').textContent = nuevaPregunta;
+                document.getElementById('cajaEditorPregunta').style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = "Actualizar para todos";
+            } catch (error) {
+                alert("No se pudo actualizar la pregunta.");
+                btn.disabled = false;
+                btn.textContent = "Actualizar para todos";
+            }
+        }
+
         function publicarRecuerdo() {
             const autor = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
             const texto = document.getElementById('mensaje').value.trim();
@@ -232,17 +305,22 @@
             }
         }
 
-        // GESTIÓN DE IDENTIDAD FIJA POR DISPOSITIVO
         function comprobarIdentidad() {
             const usuarioGuardado = localStorage.getItem('appFamilia_usuario');
             const badge = document.getElementById('badge-usuario');
             const pantallaRegistro = document.getElementById('pantalla-registro');
+            const btnEditarPregunta = document.getElementById('btnEditarPregunta');
 
             if (!badge || !pantallaRegistro) return;
 
             if (usuarioGuardado) {
                 badge.textContent = '👤 ' + usuarioGuardado;
                 pantallaRegistro.style.display = 'none';
+                
+                // Solo Santy ve el botón de editar la pregunta del día
+                if (usuarioGuardado === 'Santy' && btnEditarPregunta) {
+                    btnEditarPregunta.style.display = 'inline-block';
+                }
             } else {
                 badge.textContent = '👤 Sin configurar';
                 pantallaRegistro.style.display = 'block';
@@ -259,14 +337,12 @@
             comprobarIdentidad();
         }
 
-        // Ejecutar solo cuando la página haya cargado por completo
         window.onload = function() {
             comprobarIdentidad();
             cargarRecuerdos();
             setInterval(cargarRecuerdos, 10000);
         };
 
-        // Forzar actualización al volver a mirar la app
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden) {
                 cargarRecuerdos();
