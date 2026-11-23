@@ -149,7 +149,7 @@
         function registrarAuditor(texto) {
             const auditorDiv = document.getElementById('auditor');
             // Descomenta la siguiente línea si quieres que el chivato se vea físicamente arriba en la pantalla:
-            // auditorDiv.style.display = 'block';
+            auditorDiv.style.display = 'block';
             auditorDiv.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${texto}`;
             console.log("AUDITOR: " + texto);
         }
