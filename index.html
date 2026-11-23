@@ -25,7 +25,7 @@
             background: var(--card-bg); font-weight: 600; color: var(--primary); font-size: 14px;
         }
 
-        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.3s ease; }
         
         .daily-q { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; position: relative; }
         .daily-q-header { display: flex; justify-content: space-between; align-items: center; }
@@ -106,7 +106,6 @@
         </div>
         <p id="preguntaTexto">Cargando tema del día...</p>
         
-        <!-- Caja oculta solo para el administrador (Santy) -->
         <div id="cajaEditorPregunta" class="edit-q-box">
             <textarea id="inputNuevaPregunta" rows="2" placeholder="Escribe el saludo o pregunta de hoy..."></textarea>
             <button id="btnGuardarPregunta" class="btn-save-q" onclick="guardarNuevaPregunta()">Actualizar para todos</button>
@@ -132,11 +131,38 @@
 
     <script>
         const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbw9spCdZVRk14DfetOYLCu1iU1xMrmN9xh3qGsfWvmHNh8hmqA9H5krpXgGRoomCZLAig/exec";
+        
+        // Variable para controlar si ya tenemos el conteo inicial de mensajes
+        let totalMensajesAnterior = -1;
 
         document.getElementById('fotoInput').addEventListener('change', function(e) {
             const nombre = e.target.files[0] ? e.target.files[0].name : '';
             document.getElementById('nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
         });
+
+        // Función para emitir un tono de aviso elegante sin archivos externos
+        function reproducirCampanita() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // Sube a A5
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch (e) {
+                console.log("Audio no permitido aún por el navegador");
+            }
+        }
 
         function comprimirImagen(file, maxWidth, callback) {
             const reader = new FileReader();
@@ -165,19 +191,25 @@
             reader.readAsDataURL(file);
         }
 
-        // Cargar pregunta del día y recuerdos desde Google Sheets
         async function cargarRecuerdos() {
             const muro = document.getElementById('muro');
             try {
                 const respuesta = await fetch(URL_SCRIPT);
                 const paquete = await respuesta.json();
                 
-                // Actualizamos la pregunta del día si viene en la respuesta
                 if (paquete.pregunta) {
                     document.getElementById('preguntaTexto').textContent = paquete.pregunta;
                 }
 
                 const datos = paquete.recuerdos || [];
+                
+                // Comprobamos si hay mensajes nuevos desde la última comprobación
+                if (totalMensajesAnterior !== -1 && datos.length > totalMensajesAnterior) {
+                    reproducirCampanita();
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // Vibración suave en el móvil
+                }
+                totalMensajesAnterior = datos.length;
+
                 muro.innerHTML = '';
                 
                 if (datos.length === 0) {
@@ -205,7 +237,6 @@
             }
         }
 
-        // Mostrar/ocultar el editor de pregunta para Santy
         function toggleEditorPregunta() {
             const caja = document.getElementById('cajaEditorPregunta');
             const textoActual = document.getElementById('preguntaTexto').textContent;
@@ -217,7 +248,6 @@
             }
         }
 
-        // Enviar la nueva pregunta del día a Google Sheets
         async function guardarNuevaPregunta() {
             const nuevaPregunta = document.getElementById('inputNuevaPregunta').value.trim();
             if (!nuevaPregunta) return;
@@ -317,7 +347,6 @@
                 badge.textContent = '👤 ' + usuarioGuardado;
                 pantallaRegistro.style.display = 'none';
                 
-                // Solo Santy ve el botón de editar la pregunta del día
                 if (usuarioGuardado === 'Santy' && btnEditarPregunta) {
                     btnEditarPregunta.style.display = 'inline-block';
                 }
