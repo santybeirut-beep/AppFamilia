@@ -69,9 +69,6 @@
         .post-text { font-size: 16px; line-height: 1.4; margin: 0 0 10px 0; }
         .post-img { width: 100%; border-radius: 12px; max-height: 320px; object-fit: cover; }
         .loader { text-align: center; color: var(--text-sec); padding: 20px; font-size: 14px; }
-        
-        /* Panel del chivato auditor en pantalla */
-        #auditor { background: #1C1C1E; color: #00FF66; padding: 10px; border-radius: 10px; font-family: monospace; font-size: 11px; margin-bottom: 16px; display: none; }
     </style>
 </head>
 <body>
@@ -100,17 +97,15 @@
             Guardar mi nombre
         </button>
     </div>
-    
-    <!-- Chivato Auditor en Pantalla (para ver qué hace el script) -->
-    <div id="auditor">🔍 Auditor iniciándose...</div>
 
-    <!-- Botón temporal para probar el sonido a mano -->
-    <div style="margin-bottom: 16px; text-align: center;">
-        <button onclick="reproducirCampanita(); registrarAuditor('Prueba de sonido manual forzada');" style="background: #E5E5EA; border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
-            🔔 Probar sonido a mano
+    <!-- Botón discreto opcional para forzar prueba de sonido -->
+    <div style="margin-bottom: 12px; text-align: right;">
+        <button onclick="reproducirCampanita()" style="background: transparent; border: none; color: var(--text-sec); font-size: 12px; cursor: pointer;">
+            🔔 Probar sonido
         </button>
     </div>
-
+    
+    <!-- Tarjeta de Pregunta / Saludo del día -->
     <div class="card daily-q">
         <div class="daily-q-header">
             <small>💡 El tema de hoy</small>
@@ -146,14 +141,6 @@
         
         let totalMensajesAnterior = -1;
 
-        function registrarAuditor(texto) {
-            const auditorDiv = document.getElementById('auditor');
-            // Descomenta la siguiente línea si quieres que el chivato se vea físicamente arriba en la pantalla:
-            auditorDiv.style.display = 'block';
-            auditorDiv.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${texto}`;
-            console.log("AUDITOR: " + texto);
-        }
-
         document.getElementById('fotoInput').addEventListener('change', function(e) {
             const nombre = e.target.files[0] ? e.target.files[0].name : '';
             document.getElementById('nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
@@ -180,9 +167,8 @@
                 
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.4);
-                registrarAuditor("Éxito: Sonido de campana emitido.");
             } catch (e) {
-                registrarAuditor("Error de audio: " + e.message);
+                console.log("Audio no permitido aún");
             }
         }
 
@@ -216,7 +202,6 @@
         async function cargarRecuerdos() {
             const muro = document.getElementById('muro');
             try {
-                registrarAuditor("Consultando Google Drive...");
                 const respuesta = await fetch(URL_SCRIPT);
                 const paquete = await respuesta.json();
                 
@@ -225,11 +210,8 @@
                 }
 
                 const datos = paquete.recuerdos || [];
-                registrarAuditor(`Recibidos ${datos.length} mensajes. Anterior: ${totalMensajesAnterior}`);
                 
-                // Comprobamos si hay mensajes nuevos
                 if (totalMensajesAnterior !== -1 && datos.length > totalMensajesAnterior) {
-                    registrarAuditor("¡Nuevos mensajes detectados! Intentando sonar...");
                     reproducirCampanita();
                     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                 }
@@ -257,7 +239,6 @@
                     muro.appendChild(div);
                 });
             } catch (error) {
-                registrarAuditor("Error al conectar: " + error.message);
                 console.error(error);
                 muro.innerHTML = '<div class="loader">Error al conectar con Google Drive. Revisa la URL del script.</div>';
             }
