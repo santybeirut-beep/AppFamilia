@@ -15,18 +15,47 @@
             --primary: #007AFF;
             --text-main: #1C1C1E;
             --text-sec: #8E8E93;
+            --success: #34C759;
+            --danger: #FF3B30;
         }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 16px; padding-bottom: 50px; }
         
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
         h1 { font-size: 24px; margin: 0; font-weight: 700; }
         .user-picker { 
             padding: 8px 12px; border-radius: 20px; border: 1px solid #D1D1D6; 
             background: var(--card-bg); font-weight: 600; color: var(--primary); font-size: 14px;
         }
 
-        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.3s ease; }
+        /* Selector de pestañas estilo iOS */
+        .nav-tabs {
+            display: flex;
+            background: #E5E5EA;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-sec);
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .nav-tab.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         
         .daily-q { background: linear-gradient(135deg, #007AFF, #5856D6); color: white; position: relative; }
         .daily-q-header { display: flex; justify-content: space-between; align-items: center; }
@@ -70,6 +99,67 @@
         .post-text { font-size: 16px; line-height: 1.4; margin: 0 0 10px 0; }
         .post-img { width: 100%; border-radius: 12px; max-height: 320px; object-fit: cover; }
         .loader { text-align: center; color: var(--text-sec); padding: 20px; font-size: 14px; }
+
+        /* Estilos específicos del Trivial */
+        .trivia-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-sec);
+        }
+        .trivia-badge {
+            background: #E5F1FF;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .trivia-question {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.35;
+            margin: 10px 0 16px 0;
+        }
+        .trivia-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border: 1.5px solid #E5E5EA;
+            background: #F9F9FB;
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .trivia-option:active { transform: scale(0.98); }
+        .trivia-option.correct {
+            background: #E8F8ED;
+            border-color: var(--success);
+            color: #1E7E34;
+        }
+        .trivia-option.wrong {
+            background: #FFEBEA;
+            border-color: var(--danger);
+            color: #B02A37;
+        }
+        .trivia-option:disabled { cursor: default; }
+        .trivia-fact {
+            display: none;
+            background: #F2F2F7;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #3A3A3C;
+            margin-top: 12px;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -81,12 +171,18 @@
         </div>
     </header>
 
+    <!-- Selector de pestañas -->
+    <div class="nav-tabs">
+        <button id="tab-tablon" class="nav-tab active" onclick="cambiarVista('tablon')">🏡 Tablón</button>
+        <button id="tab-trivial" class="nav-tab" onclick="cambiarVista('trivial')">🎯 Trivial Familiar</button>
+    </div>
+
     <!-- Pantalla de registro inicial -->
     <div id="pantalla-registro" style="display: none; background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
         <h2 style="margin-top: 0; font-size: 1.2rem; color: #1c1c1e;">¡Bienvenido a la familia! 👋</h2>
         <p style="color: #666; font-size: 0.95rem;">Selecciona quién eres para dejar este dispositivo configurado a tu nombre:</p>
         
-        <select id="selector-inicial" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px; background: #f9f9f9;">
+        <select id="selector-inicial" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px; background: #f9f99;">
             <option value="">-- Elige tu nombre --</option>
             <option value="Santy">Santy</option>
             <option value="Rosarin">Rosarin</option>
@@ -99,49 +195,299 @@
         </button>
     </div>
 
-    <!-- Botón discreto opcional para forzar prueba de sonido -->
-    <div style="margin-bottom: 12px; text-align: right;">
-        <button onclick="reproducirCampanita()" style="background: transparent; border: none; color: var(--text-sec); font-size: 12px; cursor: pointer;">
-            🔔 Probar sonido
-        </button>
-    </div>
-    
-    <!-- Tarjeta de Pregunta / Saludo del día -->
-    <div class="card daily-q">
-        <div class="daily-q-header">
-            <small>💡 El tema de hoy</small>
-            <button id="btnEditarPregunta" class="btn-edit-q" style="display: none;" onclick="toggleEditorPregunta()">✏️ Cambiar</button>
+    <!-- ==================== VISTA 1: TABLÓN FAMILIAR ==================== -->
+    <div id="vista-tablon">
+        <div style="margin-bottom: 12px; text-align: right;">
+            <button onclick="reproducirCampanita()" style="background: transparent; border: none; color: var(--text-sec); font-size: 12px; cursor: pointer;">
+                🔔 Probar sonido
+            </button>
         </div>
-        <p id="preguntaTexto">Cargando tema del día...</p>
         
-        <div id="cajaEditorPregunta" class="edit-q-box">
-            <textarea id="inputNuevaPregunta" rows="2" placeholder="Escribe el saludo o pregunta de hoy..."></textarea>
-            <button id="btnGuardarPregunta" class="btn-save-q" onclick="guardarNuevaPregunta()">Actualizar para todos</button>
+        <div class="card daily-q">
+            <div class="daily-q-header">
+                <small>💡 El tema de hoy</small>
+                <button id="btnEditarPregunta" class="btn-edit-q" style="display: none;" onclick="toggleEditorPregunta()">✏️ Cambiar</button>
+            </div>
+            <p id="preguntaTexto">Cargando tema del día...</p>
+            
+            <div id="cajaEditorPregunta" class="edit-q-box">
+                <textarea id="inputNuevaPregunta" rows="2" placeholder="Escribe el saludo o pregunta de hoy..."></textarea>
+                <button id="btnGuardarPregunta" class="btn-save-q" onclick="guardarNuevaPregunta()">Actualizar para todos</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <textarea id="mensaje" rows="2" placeholder="Escribe una nota, respuesta o recuerdo..."></textarea>
+            <div class="form-row">
+                <input type="text" id="lugar" placeholder="📍 ¿Dónde? (ej. Casa, Pozuelo...)" style="margin-bottom:0;">
+                <label class="file-label">
+                    📷 Foto
+                    <input type="file" id="fotoInput" accept="image/*">
+                </label>
+            </div>
+            <div id="nombreFoto" style="font-size: 12px; color: var(--primary); margin-bottom: 8px;"></div>
+            <button id="btnEnviar" class="btn-send" onclick="publicarRecuerdo()">Publicar en el tablón</button>
+        </div>
+
+        <div id="muro">
+            <div class="loader">Cargando recuerdos desde Google Drive...</div>
         </div>
     </div>
 
-    <div class="card">
-        <textarea id="mensaje" rows="2" placeholder="Escribe una nota, respuesta o recuerdo..."></textarea>
-        <div class="form-row">
-            <input type="text" id="lugar" placeholder="📍 ¿Dónde? (ej. Casa, Pozuelo...)" style="margin-bottom:0;">
-            <label class="file-label">
-                📷 Foto
-                <input type="file" id="fotoInput" accept="image/*">
-            </label>
+    <!-- ==================== VISTA 2: TRIVIAL FAMILIAR ==================== -->
+    <div id="vista-trivial" style="display: none;">
+        <div class="card" id="caja-juego">
+            <div class="trivia-header">
+                <span id="trivia-categoria" class="trivia-badge">Categoría</span>
+                <span id="trivia-progreso">Pregunta 1 / 8</span>
+            </div>
+            
+            <div id="trivia-pregunta" class="trivia-question">Cargando pregunta...</div>
+            
+            <div id="trivia-opciones"></div>
+            
+            <div id="trivia-dato" class="trivia-fact"></div>
+            
+            <button id="btn-siguiente-pregunta" class="btn-send" style="display: none;" onclick="siguientePregunta()">Siguiente pregunta ➡️</button>
         </div>
-        <div id="nombreFoto" style="font-size: 12px; color: var(--primary); margin-bottom: 8px;"></div>
-        <button id="btnEnviar" class="btn-send" onclick="publicarRecuerdo()">Publicar en el tablón</button>
-    </div>
 
-    <div id="muro">
-        <div class="loader">Cargando recuerdos desde Google Drive...</div>
+        <div class="card" id="caja-resultado" style="display: none; text-align: center; padding: 24px 16px;">
+            <div style="font-size: 48px; margin-bottom: 10px;">🏆</div>
+            <h2 style="margin: 0 0 8px 0;">¡Partida completada!</h2>
+            <p id="texto-puntuacion" style="font-size: 18px; color: var(--primary); font-weight: 700; margin-bottom: 16px;"></p>
+            <p id="mensaje-rango" style="color: var(--text-sec); font-size: 15px; margin-bottom: 24px;"></p>
+            
+            <button id="btn-compartir-puntos" class="btn-send" style="background: var(--success); margin-bottom: 12px;" onclick="publicarResultadoEnTablon()">
+                📢 Presumir de puntos en el Tablón
+            </button>
+            <button class="btn-send" style="background: #E5E5EA; color: var(--text-main);" onclick="iniciarTrivial()">
+                🔄 Volver a jugar
+            </button>
+        </div>
     </div>
 
     <script>
         const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbw9spCdZVRk14DfetOYLCu1iU1xMrmN9xh3qGsfWvmHNh8hmqA9H5krpXgGRoomCZLAig/exec";
-        
         let totalMensajesAnterior = -1;
 
+        // ==================== BASE DE DATOS DEL TRIVIAL ====================
+        // ¡Aquí puedes añadir, editar o inventar tus propias preguntas!
+        const preguntasTrivial = [
+            {
+                categoria: "🎬 Cine Clásico",
+                pregunta: "¿Qué obra maestra de 1942 ambientada en Marruecos protagonizan Humphrey Bogart e Ingrid Bergman?",
+                opciones: ["El halcón maltés", "Casablanca", "Cayo Largo", "Tener y no tener"],
+                correcta: 1,
+                dato: "Ganó 3 premios Óscar, incluyendo Mejor Película y Mejor Director para Michael Curtiz."
+            },
+            {
+                categoria: "🦸‍♂️ Los 4 Fantásticos",
+                pregunta: "¿Cuál es la verdadera identidad del superhéroe conocido como 'La Cosa'?",
+                opciones: ["Reed Richards", "Johnny Storm", "Ben Grimm", "Victor Von Doom"],
+                correcta: 2,
+                dato: "Ben Grimm era piloto de pruebas y el mejor amigo universitario de Reed Richards."
+            },
+            {
+                categoria: "🌍 Geografía",
+                pregunta: "¿Qué estrecho separa Europa de África y conecta el océano Atlántico con el mar Mediterráneo?",
+                opciones: ["Estrecho de Ormuz", "Estrecho de Bering", "Estrecho de Gibraltar", "Estrecho de Magallanes"],
+                correcta: 2,
+                dato: "En su punto más angosto tiene apenas 14,4 kilómetros de ancho."
+            },
+            {
+                categoria: "🏛️ Historia",
+                pregunta: "¿En qué año se produjo la caída definitiva del Imperio Romano de Occidente?",
+                opciones: ["476 d. C.", "1492 d. C.", "313 d. C.", "1066 d. C."],
+                correcta: 0,
+                dato: "El joven emperador Rómulo Augústulo fue depuesto por el caudillo germánico Odoacro."
+            },
+            {
+                categoria: "🎬 Cine Clásico",
+                pregunta: "¿Qué legendario director británico dirigió 'La ventana indiscreta' (1954) y 'Vértigo' (1958)?",
+                opciones: ["Billy Wilder", "John Ford", "Alfred Hitchcock", "Orson Welles"],
+                correcta: 2,
+                dato: "Ambas películas estuvieron protagonizadas por su actor fetiche, James Stewart."
+            },
+            {
+                categoria: "🌍 Geografía",
+                pregunta: "¿Cuál es la capital oficial de Kenia?",
+                opciones: ["Lagos", "Nairobi", "Addis Abeba", "Kampala"],
+                correcta: 1,
+                dato: "Es conocida como la 'Ciudad Verde en el Sol' y alberga un parque nacional dentro de sus propios límites."
+            },
+            {
+                categoria: "🦸‍♂️ Los 4 Fantásticos",
+                pregunta: "¿Qué grito de batalla lanza Johnny Storm (La Antorcha Humana) al encenderse en llamas?",
+                opciones: ["¡A la carga!", "¡Llamas a mí!", "¡Fuego total!", "¡Arde ahora!"],
+                correcta: 1,
+                dato: "En inglés su famosa frase original es 'Flame on!'."
+            },
+            {
+                categoria: "🏡 Nuestra Familia",
+                pregunta: "¿Cómo se llama nuestro cuartel general digital en el móvil?",
+                opciones: ["El Club Secreto", "Nuestro Rincón", "La Cueva", "Casa Central"],
+                correcta: 1,
+                dato: "¡Un espacio privado creado exclusivamente para Santy, Rosarin, Peque y Pam!"
+            }
+        ];
+
+        let indicePreguntaActual = 0;
+        let puntuacionActual = 0;
+
+        // ==================== NAVEGACIÓN ENTRE PESTAÑAS ====================
+        function cambiarVista(vista) {
+            const vistaTablon = document.getElementById('vista-tablon');
+            const vistaTrivial = document.getElementById('vista-trivial');
+            const tabTablon = document.getElementById('tab-tablon');
+            const tabTrivial = document.getElementById('tab-trivial');
+
+            if (vista === 'tablon') {
+                vistaTablon.style.display = 'block';
+                vistaTrivial.style.display = 'none';
+                tabTablon.classList.add('active');
+                tabTrivial.classList.remove('active');
+            } else {
+                vistaTablon.style.display = 'none';
+                vistaTrivial.style.display = 'block';
+                tabTablon.classList.remove('active');
+                tabTrivial.classList.add('active');
+                iniciarTrivial();
+            }
+        }
+
+        // ==================== LÓGICA DEL TRIVIAL ====================
+        function iniciarTrivial() {
+            indicePreguntaActual = 0;
+            puntuacionActual = 0;
+            document.getElementById('caja-juego').style.display = 'block';
+            document.getElementById('caja-resultado').style.display = 'none';
+            const btnCompartir = document.getElementById('btn-compartir-puntos');
+            btnCompartir.disabled = false;
+            btnCompartir.textContent = "📢 Presumir de puntos en el Tablón";
+            mostrarPregunta();
+        }
+
+        function mostrarPregunta() {
+            const actual = preguntasTrivial[indicePreguntaActual];
+            document.getElementById('trivia-categoria').textContent = actual.categoria;
+            document.getElementById('trivia-progreso').textContent = `Pregunta ${indicePreguntaActual + 1} / ${preguntasTrivial.length}`;
+            document.getElementById('trivia-pregunta').textContent = actual.pregunta;
+            
+            const cajaDato = document.getElementById('trivia-dato');
+            cajaDato.style.display = 'none';
+            cajaDato.textContent = '';
+
+            const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
+            btnSiguiente.style.display = 'none';
+
+            const contenedorOpciones = document.getElementById('trivia-opciones');
+            contenedorOpciones.innerHTML = '';
+
+            actual.opciones.forEach((textoOpcion, index) => {
+                const boton = document.createElement('button');
+                boton.className = 'trivia-option';
+                boton.textContent = textoOpcion;
+                boton.onclick = () => comprobarRespuesta(index, boton);
+                contenedorOpciones.appendChild(boton);
+            });
+        }
+
+        function comprobarRespuesta(indiceElegido, botonPulsado) {
+            const actual = preguntasTrivial[indicePreguntaActual];
+            const todosLosBotones = document.querySelectorAll('.trivia-option');
+
+            // Desactivar todos los botones para no poder pulsar dos veces
+            todosLosBotones.forEach(btn => btn.disabled = true);
+
+            if (indiceElegido === actual.correcta) {
+                botonPulsado.classList.add('correct');
+                puntuacionActual++;
+                reproducirCampanita();
+            } else {
+                botonPulsado.classList.add('wrong');
+                // Iluminar también cuál era la buena
+                todosLosBotones[actual.correcta].classList.add('correct');
+            }
+
+            // Mostrar dato curioso
+            const cajaDato = document.getElementById('trivia-dato');
+            cajaDato.textContent = "💡 " + actual.dato;
+            cajaDato.style.display = 'block';
+
+            // Mostrar botón para avanzar
+            const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
+            btnSiguiente.textContent = (indicePreguntaActual + 1 < preguntasTrivial.length) 
+                ? "Siguiente pregunta ➡️" 
+                : "Ver mi resultado 🏆";
+            btnSiguiente.style.display = 'block';
+        }
+
+        function siguientePregunta() {
+            indicePreguntaActual++;
+            if (indicePreguntaActual < preguntasTrivial.length) {
+                mostrarPregunta();
+            } else {
+                mostrarResultadoFinal();
+            }
+        }
+
+        function mostrarResultadoFinal() {
+            document.getElementById('caja-juego').style.display = 'none';
+            document.getElementById('caja-resultado').style.display = 'block';
+
+            const total = preguntasTrivial.length;
+            const autor = localStorage.getItem('appFamilia_usuario') || 'Jugador';
+            document.getElementById('texto-puntuacion').textContent = `${autor}: ${puntuacionActual} de ${total} aciertos`;
+
+            let mensaje = "";
+            if (puntuacionActual === total) {
+                mensaje = "¡Pleno absoluto! Eres el cerebro oficial de Los 4 Fantásticos 🧠✨";
+            } else if (puntuacionActual >= total / 2) {
+                mensaje = "¡Muy buen nivel! Se nota que dominas los clásicos y la cultura general 👏";
+            } else {
+                mensaje = "¡Buen calentamiento! Toca revancha para escalar puestos en la familia 😉";
+            }
+            document.getElementById('mensaje-rango').textContent = mensaje;
+        }
+
+        function publicarResultadoEnTablon() {
+            const autor = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
+            const total = preguntasTrivial.length;
+            const btn = document.getElementById('btn-compartir-puntos');
+            
+            btn.disabled = true;
+            btn.textContent = "Publicando resultado...";
+
+            const ahora = new Date();
+            const fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ', ' + 
+                                    ahora.getHours().toString().padStart(2, '0') + ':' + 
+                                    ahora.getMinutes().toString().padStart(2, '0');
+
+            const textoResultado = `🎯 ¡Acabo de jugar al Trivial Familiar y he sacado ${puntuacionActual} de ${total} aciertos! ¿Quién supera mi marca? 🏆`;
+
+            fetch(URL_SCRIPT, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fecha: fechaFormateada,
+                    autor: autor,
+                    lugar: "Trivial Familiar",
+                    texto: textoResultado,
+                    imagen: ""
+                })
+            }).then(() => {
+                setTimeout(() => {
+                    cambiarVista('tablon');
+                    cargarRecuerdos();
+                }, 1200);
+            }).catch(() => {
+                alert("No se pudo publicar el resultado.");
+                btn.disabled = false;
+            });
+        }
+
+        // ==================== FUNCIONES DEL TABLÓN FAMILIAR ====================
         document.getElementById('fotoInput').addEventListener('change', function(e) {
             const nombre = e.target.files[0] ? e.target.files[0].name : '';
             document.getElementById('nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
@@ -150,27 +496,19 @@
         function reproducirCampanita() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
-                
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
-                
                 gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
-                
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.4);
-            } catch (e) {
-                console.log("Audio no permitido aún");
-            }
+            } catch (e) {}
         }
 
         function comprimirImagen(file, maxWidth, callback) {
@@ -181,19 +519,15 @@
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-
                     if (width > maxWidth) {
                         height = Math.round((height * maxWidth) / width);
                         width = maxWidth;
                     }
-
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                    callback(dataUrl);
+                    callback(canvas.toDataURL('image/jpeg', 0.6));
                 };
                 img.src = event.target.result;
             };
@@ -205,11 +539,7 @@
             try {
                 const respuesta = await fetch(URL_SCRIPT);
                 const paquete = await respuesta.json();
-                
-                if (paquete.pregunta) {
-                    document.getElementById('preguntaTexto').textContent = paquete.pregunta;
-                }
-
+                if (paquete.pregunta) document.getElementById('preguntaTexto').textContent = paquete.pregunta;
                 const datos = paquete.recuerdos || [];
                 
                 if (totalMensajesAnterior !== -1 && datos.length > totalMensajesAnterior) {
@@ -217,7 +547,6 @@
                     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                 }
                 totalMensajesAnterior = datos.length;
-
                 muro.innerHTML = '';
                 
                 if (datos.length === 0) {
@@ -240,8 +569,7 @@
                     muro.appendChild(div);
                 });
             } catch (error) {
-                console.error(error);
-                muro.innerHTML = '<div class="loader">Error al conectar con Google Drive. Revisa la URL del script.</div>';
+                muro.innerHTML = '<div class="loader">Error al conectar con Google Drive.</div>';
             }
         }
 
@@ -259,7 +587,6 @@
         async function guardarNuevaPregunta() {
             const nuevaPregunta = document.getElementById('inputNuevaPregunta').value.trim();
             if (!nuevaPregunta) return;
-
             const btn = document.getElementById('btnGuardarPregunta');
             btn.disabled = true;
             btn.textContent = "Guardando...";
@@ -269,12 +596,8 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tipo: "cambiar_pregunta",
-                        pregunta: nuevaPregunta
-                    })
+                    body: JSON.stringify({ tipo: "cambiar_pregunta", pregunta: nuevaPregunta })
                 });
-
                 document.getElementById('preguntaTexto').textContent = nuevaPregunta;
                 document.getElementById('cajaEditorPregunta').style.display = 'none';
                 btn.disabled = false;
@@ -324,7 +647,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
                 document.getElementById('mensaje').value = '';
                 document.getElementById('lugar').value = '';
                 document.getElementById('fotoInput').value = '';
@@ -335,7 +657,6 @@
                     btn.disabled = false;
                     btn.textContent = "Publicar en el tablón";
                 }, 1500);
-
             } catch (error) {
                 alert("Hubo un problema al guardar. Inténtalo de nuevo.");
                 btn.disabled = false;
@@ -354,7 +675,6 @@
             if (usuarioGuardado) {
                 badge.textContent = '👤 ' + usuarioGuardado;
                 pantallaRegistro.style.display = 'none';
-                
                 if (usuarioGuardado === 'Santy' && btnEditarPregunta) {
                     btnEditarPregunta.style.display = 'inline-block';
                 }
@@ -381,9 +701,7 @@
         };
 
         document.addEventListener("visibilitychange", function() {
-            if (!document.hidden) {
-                cargarRecuerdos();
-            }
+            if (!document.hidden) cargarRecuerdos();
         });
     </script>
 </body>
