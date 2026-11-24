@@ -118,8 +118,9 @@
         }
         .trivia-photo {
             width: 100%;
-            max-height: 240px;
-            object-fit: cover;
+            max-height: 220px; /* Altura máxima contenida */
+            object-fit: contain; /* Cambiado a contain para que la foto se vea entera sin recortar */
+            background: #000; /* Fondo negro elegante si la foto es cuadrada o vertical */
             border-radius: 12px;
             margin-bottom: 14px;
             display: none;
@@ -703,7 +704,11 @@
         window.onload = function() {
             comprobarIdentidad();
             cargarDatosDesdeDrive();
-            setInterval(cargarDatosDesdeDrive, 10000);
+            setInterval(() => {
+                if (document.getElementById('vista-tablon').style.display !== 'none') {
+                    cargarDatosDesdeDrive();
+                }
+            }, 10000);
         };
 
         document.addEventListener("visibilitychange", function() {
