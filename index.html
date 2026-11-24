@@ -755,14 +755,13 @@
             }
         }
 
-        async function enviarDatosAlServidor(payload) {
+        aasync function enviarDatosAlServidor(payload) {
             const btn = document.getElementById('btnEnviar');
             try {
-                // 1. Enviamos los datos al servidor (Apps Script)
+                // 1. Enviamos los datos sin cabeceras restrictivas para evitar el bloqueo no-cors
                 await fetch(URL_SCRIPT, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
@@ -778,7 +777,6 @@
                 // 3. Margen de 3 segundos para que Google Sheets escriba el registro
                 setTimeout(() => {
                     try {
-                        // Intentamos recargar el muro de forma segura
                         if (typeof cargarDatosDesdeDrive === 'function') {
                             cargarDatosDesdeDrive();
                         }
