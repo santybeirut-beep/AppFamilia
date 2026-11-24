@@ -254,6 +254,9 @@
             <!-- Foto opcional de la pregunta -->
             <img id="trivia-foto" class="trivia-photo" src="" alt="Foto de la pregunta">
 
+            <!-- Audio opcional de la pregunta -->
+            <audio id="trivia-audio" controls style="width: 100%; margin-bottom: 14px; display: none; border-radius: 12px;"></audio>
+            
             <div id="trivia-pregunta" class="trivia-question">Conectando con Google Sheets para cargar tus preguntas...</div>
             
             <div id="trivia-opciones"></div>
@@ -280,7 +283,7 @@
         <!-- Botón y formulario desplegable para añadir preguntas nuevas -->
         <div style="margin-top: 20px;">
             <button class="btn-send" style="background: #5856D6;" onclick="toggleCreadorTrivial()">
-                ➕ Añadir pregunta nueva (con foto)
+                ➕ Añadir pregunta nueva (con foto o audio)
             </button>
         </div>
 
@@ -307,8 +310,8 @@
             
             <div class="form-row">
                 <label class="file-label" style="width: 100%; text-align: center;">
-                    📷 Adjuntar foto (se comprime sola)
-                    <input type="file" id="new-q-foto" accept="image/*">
+                    📷 Adjuntar foto o 🎵 audio MP3 corto
+                    <input type="file" id="new-q-foto" accept="image/*,audio/*">
                 </label>
             </div>
             <div id="new-q-nombreFoto" style="font-size: 12px; color: var(--primary); margin-bottom: 10px; text-align: center;"></div>
@@ -370,6 +373,13 @@
 
         // ==================== LÓGICA DEL TRIVIAL ====================
         function iniciarTrivial() {
+        // 🛑 Asegurarnos de pausar cualquier audio que pudiera estar sonando
+            const audioPlayer = document.getElementById('trivia-audio');
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
+
             if (bancoCompletoTrivial.length === 0) {
                 document.getElementById('trivia-pregunta').textContent = "⚠️ No hay preguntas en la pestaña 'Trivial' de tu Google Sheet. ¡Añade algunas en la hoja de cálculo!";
                 document.getElementById('trivia-opciones').innerHTML = '';
@@ -379,17 +389,17 @@
 
             indicePreguntaActual = 0;
             puntuacionActual = 0;
-            
+    
             const mezcladas = barajarArray(bancoCompletoTrivial);
             partidaActual = mezcladas.slice(0, Math.min(PREGUNTAS_POR_PARTIDA, mezcladas.length));
 
             document.getElementById('caja-juego').style.display = 'block';
             document.getElementById('caja-resultado').style.display = 'none';
-            
+    
             const btnCompartir = document.getElementById('btn-compartir-puntos');
             btnCompartir.disabled = false;
             btnCompartir.textContent = "📢 Presumir de puntos en el Tablón";
-            
+    
             mostrarPregunta();
         }
 
@@ -398,36 +408,53 @@
             document.getElementById('trivia-categoria').textContent = actual.categoria;
             document.getElementById('trivia-progreso').textContent = `Pregunta ${indicePreguntaActual + 1} / ${partidaActual.length}`;
             document.getElementById('trivia-pregunta').textContent = actual.pregunta;
-            
-            // Mostrar u ocultar foto si la pregunta trae imagen
+    
             const imgFoto = document.getElementById('trivia-foto');
-            if (actual.foto && actual.foto.trim() !== "") {
-                imgFoto.src = actual.foto.trim();
-                imgFoto.style.display = 'block';
-            } else {
-                imgFoto.style.display = 'none';
-                imgFoto.src = '';
+            const audioPlayer = document.getElementById('trivia-audio');
+    
+        // Limpiar y pausar cualquier audio o foto anterior
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            audioPlayer.style.display = 'none';
+            audioPlayer.src = '';
+            imgFoto.style.display = 'none';
+            imgFoto.src = '';
+
+            const media = actual.foto ? actual.foto.trim() : "";
+
+            if (media !== "") {
+        // Comprobamos si es audio (Base64 de audio, extensión de audio o enlace directo de audio)
+                const esAudio = media.startsWith('data:audio') || 
+                            /\.(mp3|wav|ogg|m4a|aac)(\?.*)?$/i.test(media) ||
+                            media.includes('export=download');
+
+                if (esAudio) {
+                    audioPlayer.src = media;
+                    audioPlayer.style.display = 'block';
+                } else {
+                    imgFoto.src = media;
+                    imgFoto.style.display = 'block';
+                }
             }
 
-            const cajaDato = document.getElementById('trivia-dato');
-            cajaDato.style.display = 'none';
-            cajaDato.textContent = '';
+    const cajaDato = document.getElementById('trivia-dato');
+    cajaDato.style.display = 'none';
+    cajaDato.textContent = '';
 
-            const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
-            btnSiguiente.style.display = 'none';
+    const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
+    btnSiguiente.style.display = 'none';
 
-            const contenedorOpciones = document.getElementById('trivia-opciones');
-            contenedorOpciones.innerHTML = '';
+    const contenedorOpciones = document.getElementById('trivia-opciones');
+    contenedorOpciones.innerHTML = '';
 
-            actual.opciones.forEach((textoOpcion, index) => {
-                const boton = document.createElement('button');
-                boton.className = 'trivia-option';
-                boton.textContent = textoOpcion;
-                boton.onclick = () => comprobarRespuesta(index, boton);
-                contenedorOpciones.appendChild(boton);
-            });
-        }
-
+    actual.opciones.forEach((textoOpcion, index) => {
+        const boton = document.createElement('button');
+        boton.className = 'trivia-option';
+        boton.textContent = textoOpcion;
+        boton.onclick = () => comprobarRespuesta(index, boton);
+        contenedorOpciones.appendChild(boton);
+    });
+}
         function comprobarRespuesta(indiceElegido, botonPulsado) {
             const actual = partidaActual[indicePreguntaActual];
             const todosLosBotones = document.querySelectorAll('.trivia-option');
@@ -468,6 +495,12 @@
         }
 
         function mostrarResultadoFinal() {
+            // 🛑 Asegurarnos de pausar la música al terminar la partida
+            const audioPlayer = document.getElementById('trivia-audio');
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
             document.getElementById('caja-juego').style.display = 'none';
             document.getElementById('caja-resultado').style.display = 'block';
 
@@ -569,7 +602,27 @@
             };
             reader.readAsDataURL(file);
         }
+       
+        // Función para convertir cualquier MP3 corto que subas a Base64 listo para la Sheet
+        function convertirAudioABase64(event) {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
 
+        // Opcional: advertir si pesa mucho (recomendable que sean audios de pocos segundos)
+            if (archivo.size > 1024 * 1024) { // más de 1MB
+                alert("⚠️ ¡Cuidado! Es mejor que el audio sea cortito (menos de 1MB) para que la Sheet no se sature.");
+            }
+
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const base64Audio = e.target.result; // Este es el texto que copias y pegas en Google Sheets
+                console.log("¡Audio convertido a Base64 con éxito!");
+        
+            // Si quieres que aparezca automáticamente en un cuadro de texto para copiarlo:
+                prompt("Copia este código Base64 y pégalo en la columna de la Sheet:", base64Audio);
+            };
+            lector.readAsDataURL(archivo);
+        }
         async function cargarDatosDesdeDrive() {
             const muro = document.getElementById('muro');
             try {
@@ -757,8 +810,14 @@
         });
 // ==================== CREADOR DE PREGUNTAS DESDE LA APP ====================
         document.getElementById('new-q-foto').addEventListener('change', function(e) {
-            const nombre = e.target.files[0] ? e.target.files[0].name : '';
-            document.getElementById('new-q-nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
+            const archivo = e.target.files[0];
+            if (!archivo) {
+                document.getElementById('new-q-nombreFoto').textContent = '';
+                return;
+            }
+            const esAudio = archivo.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(archivo.name);
+            const tipoStr = esAudio ? '🎵 Audio listo: ' : '📷 Foto lista: ';
+            document.getElementById('new-q-nombreFoto').textContent = tipoStr + archivo.name;
         });
 
         function toggleCreadorTrivial() {
@@ -775,7 +834,7 @@
             const opcionD = document.getElementById('new-q-opD').value.trim();
             const correcta = document.getElementById('new-q-correcta').value;
             const dato = document.getElementById('new-q-dato').value.trim();
-            const fotoFile = document.getElementById('new-q-foto').files[0];
+            const archivoMultimedia = document.getElementById('new-q-foto').files[0];
 
             if (!pregunta || !opcionA || !opcionB || !opcionC || !opcionD || !correcta) {
                 alert("Por favor, rellena la pregunta, las 4 opciones y elige cuál es la correcta.");
@@ -784,9 +843,9 @@
 
             const btn = document.getElementById('btn-guardar-trivial');
             btn.disabled = true;
-            btn.textContent = "Comprimiendo y guardando...";
+            btn.textContent = "Procesando y guardando en la nube...";
 
-            const enviarPregunta = (imagenBase64) => {
+            const enviarPregunta = (mediaBase64) => {
                 const datosPaquete = {
                     tipo: "nueva_pregunta_trivial",
                     categoria: categoria,
@@ -797,10 +856,9 @@
                     opcionD: opcionD,
                     correcta: correcta,
                     dato: dato,
-                    foto: imagenBase64
+                    foto: mediaBase64 // Se guarda en la misma columna de la Sheet
                 };
 
-                // Usamos URLSearchParams para asegurar que viaje como un formulario web estándar sin bloqueos de CORS
                 fetch(URL_SCRIPT, {
                     method: 'POST',
                     body: JSON.stringify(datosPaquete)
@@ -823,7 +881,7 @@
                     btn.textContent = "💾 Guardar pregunta en Google Sheets";
                     
                     alert("¡Pregunta guardada con éxito en la nube!");
-                    cargarDatosDesdeDrive(); // Recarga las preguntas al instante
+                    cargarDatosDesdeDrive(); 
                 })
                 .catch(error => {
                     console.error("Error:", error);
@@ -833,10 +891,32 @@
                 });
             };
 
-            if (fotoFile) {
-                comprimirImagen(fotoFile, 450, (imagenBase64) => {
-                    enviarPregunta(imagenBase64);
-                });
+            if (archivoMultimedia) {
+                // Comprobamos si el archivo subido es un audio o una imagen
+                // 🛑 Control de tamaño: Google Sheets no tolera archivos gigantes en una celda (máximo recomendado: 1 MB)
+                if (archivoMultimedia.size > 1024 * 1024) {
+                    alert("⚠️ ¡El archivo de audio pesa demasiado (" + (archivoMultimedia.size / (1024*1024)).toFixed(1) + " MB)! Por favor, usa un fragmento más corto de menos de 1 MB (unos 10-15 segundos).");
+                    
+                    // Reactivamos el botón para que pueda corregirlo
+                    btn.disabled = false;
+                    btn.textContent = "💾 Guardar pregunta en Google Sheets";
+                    return; // Corta la ejecución y no deja subirlo
+                }
+                const esAudio = archivoMultimedia.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(archivoMultimedia.name);
+
+                if (esAudio) {
+                    // Si es audio, lo pasamos directamente a Base64 sin comprimir imagen
+                    const lector = new FileReader();
+                    lector.onload = function(e) {
+                        enviarPregunta(e.target.result);
+                    };
+                    lector.readAsDataURL(archivoMultimedia);
+                } else {
+                    // Si es imagen, usamos vuestro compresor habitual
+                    comprimirImagen(archivoMultimedia, 450, (imagenBase64) => {
+                        enviarPregunta(imagenBase64);
+                    });
+                }
             } else {
                 enviarPregunta("");
             }
