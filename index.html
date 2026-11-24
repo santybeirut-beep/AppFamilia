@@ -756,18 +756,27 @@
                 document.getElementById('fotoInput').value = '';
                 document.getElementById('nombreFoto').textContent = '';
 
-                // Cambiamos el texto del botón para indicar que está sincronizando
+                // Indicamos que está sincronizando
                 btn.textContent = "Sincronizando tablón...";
 
-                // 3. Damos 3 segundos de margen para que Google Sheets termine de escribir el registro
+                // 3. Margen de 3 segundos para que Google Sheets escriba el registro
                 setTimeout(() => {
-                    cargarDatosDesdeDrive(); // Vuelve a descargar el muro ya actualizado
-                    btn.disabled = false;
-                    btn.textContent = "Publicar en el tablón";
-                }, 3000); // ⏱️ Subido a 3 segundos para darle tiempo a Google Sheets
+                    try {
+                        // Intentamos recargar el muro de forma segura
+                        if (typeof cargarDatosDesdeDrive === 'function') {
+                            cargarDatosDesdeDrive();
+                        }
+                    } catch (errCarga) {
+                        console.error("Aviso al recargar el tablón:", errCarga);
+                    } finally {
+                        // 🔒 PASE LO QUE PASE, EL BOTÓN SE REACTIVA AQUÍ
+                        btn.disabled = false;
+                        btn.textContent = "Publicar en el tablón";
+                    }
+                }, 3000);
 
             } catch (error) {
-                console.error("Error:", error);
+                console.error("Error de red:", error);
                 alert("Hubo un problema al guardar. Inténtalo de nuevo.");
                 btn.disabled = false;
                 btn.textContent = "Publicar en el tablón";
