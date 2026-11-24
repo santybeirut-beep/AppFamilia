@@ -116,6 +116,14 @@
             padding: 4px 10px;
             border-radius: 8px;
         }
+        .trivia-photo {
+            width: 100%;
+            max-height: 240px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            display: none;
+        }
         .trivia-question {
             font-size: 18px;
             font-weight: 700;
@@ -182,7 +190,7 @@
         <h2 style="margin-top: 0; font-size: 1.2rem; color: #1c1c1e;">¡Bienvenido a la familia! 👋</h2>
         <p style="color: #666; font-size: 0.95rem;">Selecciona quién eres para dejar este dispositivo configurado a tu nombre:</p>
         
-        <select id="selector-inicial" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px; background: #f9f99;">
+        <select id="selector-inicial" style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px; background: #f9f9f9;">
             <option value="">-- Elige tu nombre --</option>
             <option value="Santy">Santy</option>
             <option value="Rosarin">Rosarin</option>
@@ -238,11 +246,14 @@
     <div id="vista-trivial" style="display: none;">
         <div class="card" id="caja-juego">
             <div class="trivia-header">
-                <span id="trivia-categoria" class="trivia-badge">Categoría</span>
-                <span id="trivia-progreso">Pregunta 1 / 8</span>
+                <span id="trivia-categoria" class="trivia-badge">Trivial</span>
+                <span id="trivia-progreso">Cargando...</span>
             </div>
             
-            <div id="trivia-pregunta" class="trivia-question">Cargando pregunta...</div>
+            <!-- Foto opcional de la pregunta -->
+            <img id="trivia-foto" class="trivia-photo" src="" alt="Foto de la pregunta">
+
+            <div id="trivia-pregunta" class="trivia-question">Conectando con Google Sheets para cargar tus preguntas...</div>
             
             <div id="trivia-opciones"></div>
             
@@ -261,80 +272,32 @@
                 📢 Presumir de puntos en el Tablón
             </button>
             <button class="btn-send" style="background: #E5E5EA; color: var(--text-main);" onclick="iniciarTrivial()">
-                🔄 Volver a jugar
+                🔄 Jugar otra partida nueva
             </button>
         </div>
     </div>
 
     <script>
-        const 
-        URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwYvcx-4nHrgb-gHOdUDC-58SdZex2dTvjBQWL2tVF6OJEx061VpIv1-p2mICNawc5QZg/exec
-"; 
+        // Tu URL de Google Apps Script actual
+        const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbw9USY3JoCeUiiSkLh9yQEEvfER8HxgeUBwW5nLNSWLhQ6CGxA5f4GiZYQK_tU3d1Pj2Q/exec";
+        
+        const PREGUNTAS_POR_PARTIDA = 8; 
         let totalMensajesAnterior = -1;
 
-        // ==================== BASE DE DATOS DEL TRIVIAL ====================
-        // ¡Aquí puedes añadir, editar o inventar tus propias preguntas!
-        const preguntasTrivial = [
-            {
-                categoria: "🎬 Cine Clásico",
-                pregunta: "¿Qué obra maestra de 1942 ambientada en Marruecos protagonizan Humphrey Bogart e Ingrid Bergman?",
-                opciones: ["El halcón maltés", "Casablanca", "Cayo Largo", "Tener y no tener"],
-                correcta: 1,
-                dato: "Ganó 3 premios Óscar, incluyendo Mejor Película y Mejor Director para Michael Curtiz."
-            },
-            {
-                categoria: "🦸‍♂️ Los 4 Fantásticos",
-                pregunta: "¿Cuál es la verdadera identidad del superhéroe conocido como 'La Cosa'?",
-                opciones: ["Reed Richards", "Johnny Storm", "Ben Grimm", "Victor Von Doom"],
-                correcta: 2,
-                dato: "Ben Grimm era piloto de pruebas y el mejor amigo universitario de Reed Richards."
-            },
-            {
-                categoria: "🌍 Geografía",
-                pregunta: "¿Qué estrecho separa Europa de África y conecta el océano Atlántico con el mar Mediterráneo?",
-                opciones: ["Estrecho de Ormuz", "Estrecho de Bering", "Estrecho de Gibraltar", "Estrecho de Magallanes"],
-                correcta: 2,
-                dato: "En su punto más angosto tiene apenas 14,4 kilómetros de ancho."
-            },
-            {
-                categoria: "🏛️ Historia",
-                pregunta: "¿En qué año se produjo la caída definitiva del Imperio Romano de Occidente?",
-                opciones: ["476 d. C.", "1492 d. C.", "313 d. C.", "1066 d. C."],
-                correcta: 0,
-                dato: "El joven emperador Rómulo Augústulo fue depuesto por el caudillo germánico Odoacro."
-            },
-            {
-                categoria: "🎬 Cine Clásico",
-                pregunta: "¿Qué legendario director británico dirigió 'La ventana indiscreta' (1954) y 'Vértigo' (1958)?",
-                opciones: ["Billy Wilder", "John Ford", "Alfred Hitchcock", "Orson Welles"],
-                correcta: 2,
-                dato: "Ambas películas estuvieron protagonizadas por su actor fetiche, James Stewart."
-            },
-            {
-                categoria: "🌍 Geografía",
-                pregunta: "¿Cuál es la capital oficial de Kenia?",
-                opciones: ["Lagos", "Nairobi", "Addis Abeba", "Kampala"],
-                correcta: 1,
-                dato: "Es conocida como la 'Ciudad Verde en el Sol' y alberga un parque nacional dentro de sus propios límites."
-            },
-            {
-                categoria: "🦸‍♂️ Los 4 Fantásticos",
-                pregunta: "¿Qué grito de batalla lanza Johnny Storm (La Antorcha Humana) al encenderse en llamas?",
-                opciones: ["¡A la carga!", "¡Llamas a mí!", "¡Fuego total!", "¡Arde ahora!"],
-                correcta: 1,
-                dato: "En inglés su famosa frase original es 'Flame on!'."
-            },
-            {
-                categoria: "🏡 Nuestra Familia",
-                pregunta: "¿Cómo se llama nuestro cuartel general digital en el móvil?",
-                opciones: ["El Club Secreto", "Nuestro Rincón", "La Cueva", "Casa Central"],
-                correcta: 1,
-                dato: "¡Un espacio privado creado exclusivamente para Santy, Rosarin, Peque y Pam!"
-            }
-        ];
-
+        let bancoCompletoTrivial = [];
+        let partidaActual = [];
         let indicePreguntaActual = 0;
         let puntuacionActual = 0;
+        let datosCargadosDeSheets = false;
+
+        function barajarArray(array) {
+            const copia = [...array];
+            for (let i = copia.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copia[i], copia[j]] = [copia[j], copia[i]];
+            }
+            return copia;
+        }
 
         // ==================== NAVEGACIÓN ENTRE PESTAÑAS ====================
         function cambiarVista(vista) {
@@ -353,28 +316,57 @@
                 vistaTrivial.style.display = 'block';
                 tabTablon.classList.remove('active');
                 tabTrivial.classList.add('active');
-                iniciarTrivial();
+                
+                if (!datosCargadosDeSheets) {
+                    document.getElementById('trivia-pregunta').textContent = "Conectando con Google Sheets para cargar tus preguntas...";
+                    cargarDatosDesdeDrive();
+                } else {
+                    iniciarTrivial();
+                }
             }
         }
 
         // ==================== LÓGICA DEL TRIVIAL ====================
         function iniciarTrivial() {
+            if (bancoCompletoTrivial.length === 0) {
+                document.getElementById('trivia-pregunta').textContent = "⚠️ No hay preguntas en la pestaña 'Trivial' de tu Google Sheet. ¡Añade algunas en la hoja de cálculo!";
+                document.getElementById('trivia-opciones').innerHTML = '';
+                document.getElementById('trivia-foto').style.display = 'none';
+                return;
+            }
+
             indicePreguntaActual = 0;
             puntuacionActual = 0;
+            
+            const mezcladas = barajarArray(bancoCompletoTrivial);
+            partidaActual = mezcladas.slice(0, Math.min(PREGUNTAS_POR_PARTIDA, mezcladas.length));
+
             document.getElementById('caja-juego').style.display = 'block';
             document.getElementById('caja-resultado').style.display = 'none';
+            
             const btnCompartir = document.getElementById('btn-compartir-puntos');
             btnCompartir.disabled = false;
             btnCompartir.textContent = "📢 Presumir de puntos en el Tablón";
+            
             mostrarPregunta();
         }
 
         function mostrarPregunta() {
-            const actual = preguntasTrivial[indicePreguntaActual];
+            const actual = partidaActual[indicePreguntaActual];
             document.getElementById('trivia-categoria').textContent = actual.categoria;
-            document.getElementById('trivia-progreso').textContent = `Pregunta ${indicePreguntaActual + 1} / ${preguntasTrivial.length}`;
+            document.getElementById('trivia-progreso').textContent = `Pregunta ${indicePreguntaActual + 1} / ${partidaActual.length}`;
             document.getElementById('trivia-pregunta').textContent = actual.pregunta;
             
+            // Mostrar u ocultar foto si la pregunta trae imagen
+            const imgFoto = document.getElementById('trivia-foto');
+            if (actual.foto && actual.foto.trim() !== "") {
+                imgFoto.src = actual.foto.trim();
+                imgFoto.style.display = 'block';
+            } else {
+                imgFoto.style.display = 'none';
+                imgFoto.src = '';
+            }
+
             const cajaDato = document.getElementById('trivia-dato');
             cajaDato.style.display = 'none';
             cajaDato.textContent = '';
@@ -395,10 +387,9 @@
         }
 
         function comprobarRespuesta(indiceElegido, botonPulsado) {
-            const actual = preguntasTrivial[indicePreguntaActual];
+            const actual = partidaActual[indicePreguntaActual];
             const todosLosBotones = document.querySelectorAll('.trivia-option');
 
-            // Desactivar todos los botones para no poder pulsar dos veces
             todosLosBotones.forEach(btn => btn.disabled = true);
 
             if (indiceElegido === actual.correcta) {
@@ -407,18 +398,19 @@
                 reproducirCampanita();
             } else {
                 botonPulsado.classList.add('wrong');
-                // Iluminar también cuál era la buena
-                todosLosBotones[actual.correcta].classList.add('correct');
+                if (todosLosBotones[actual.correcta]) {
+                    todosLosBotones[actual.correcta].classList.add('correct');
+                }
             }
 
-            // Mostrar dato curioso
-            const cajaDato = document.getElementById('trivia-dato');
-            cajaDato.textContent = "💡 " + actual.dato;
-            cajaDato.style.display = 'block';
+            if (actual.dato && actual.dato.trim() !== "") {
+                const cajaDato = document.getElementById('trivia-dato');
+                cajaDato.textContent = "💡 " + actual.dato;
+                cajaDato.style.display = 'block';
+            }
 
-            // Mostrar botón para avanzar
             const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
-            btnSiguiente.textContent = (indicePreguntaActual + 1 < preguntasTrivial.length) 
+            btnSiguiente.textContent = (indicePreguntaActual + 1 < partidaActual.length) 
                 ? "Siguiente pregunta ➡️" 
                 : "Ver mi resultado 🏆";
             btnSiguiente.style.display = 'block';
@@ -426,7 +418,7 @@
 
         function siguientePregunta() {
             indicePreguntaActual++;
-            if (indicePreguntaActual < preguntasTrivial.length) {
+            if (indicePreguntaActual < partidaActual.length) {
                 mostrarPregunta();
             } else {
                 mostrarResultadoFinal();
@@ -437,7 +429,7 @@
             document.getElementById('caja-juego').style.display = 'none';
             document.getElementById('caja-resultado').style.display = 'block';
 
-            const total = preguntasTrivial.length;
+            const total = partidaActual.length;
             const autor = localStorage.getItem('appFamilia_usuario') || 'Jugador';
             document.getElementById('texto-puntuacion').textContent = `${autor}: ${puntuacionActual} de ${total} aciertos`;
 
@@ -454,7 +446,7 @@
 
         function publicarResultadoEnTablon() {
             const autor = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
-            const total = preguntasTrivial.length;
+            const total = partidaActual.length;
             const btn = document.getElementById('btn-compartir-puntos');
             
             btn.disabled = true;
@@ -481,7 +473,7 @@
             }).then(() => {
                 setTimeout(() => {
                     cambiarVista('tablon');
-                    cargarRecuerdos();
+                    cargarDatosDesdeDrive();
                 }, 1200);
             }).catch(() => {
                 alert("No se pudo publicar el resultado.");
@@ -489,7 +481,7 @@
             });
         }
 
-        // ==================== FUNCIONES DEL TABLÓN FAMILIAR ====================
+        // ==================== CONEXIÓN CON GOOGLE SHEETS ====================
         document.getElementById('fotoInput').addEventListener('change', function(e) {
             const nombre = e.target.files[0] ? e.target.files[0].name : '';
             document.getElementById('nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
@@ -536,14 +528,26 @@
             reader.readAsDataURL(file);
         }
 
-        async function cargarRecuerdos() {
+        async function cargarDatosDesdeDrive() {
             const muro = document.getElementById('muro');
             try {
                 const respuesta = await fetch(URL_SCRIPT);
                 const paquete = await respuesta.json();
-                if (paquete.pregunta) document.getElementById('preguntaTexto').textContent = paquete.pregunta;
-                const datos = paquete.recuerdos || [];
                 
+                // 1. Actualizar tema del día
+                if (paquete.pregunta) document.getElementById('preguntaTexto').textContent = paquete.pregunta;
+                
+                // 2. Cargar banco de preguntas del Trivial desde Google Sheets
+                if (paquete.trivial && paquete.trivial.length > 0) {
+                    bancoCompletoTrivial = paquete.trivial;
+                    datosCargadosDeSheets = true;
+                    if (document.getElementById('vista-trivial').style.display === 'block') {
+                        iniciarTrivial();
+                    }
+                }
+
+                // 3. Cargar recuerdos del Tablón
+                const datos = paquete.recuerdos || [];
                 if (totalMensajesAnterior !== -1 && datos.length > totalMensajesAnterior) {
                     reproducirCampanita();
                     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
@@ -655,7 +659,7 @@
                 document.getElementById('nombreFoto').textContent = '';
 
                 setTimeout(() => {
-                    cargarRecuerdos();
+                    cargarDatosDesdeDrive();
                     btn.disabled = false;
                     btn.textContent = "Publicar en el tablón";
                 }, 1500);
@@ -698,12 +702,12 @@
 
         window.onload = function() {
             comprobarIdentidad();
-            cargarRecuerdos();
-            setInterval(cargarRecuerdos, 10000);
+            cargarDatosDesdeDrive();
+            setInterval(cargarDatosDesdeDrive, 10000);
         };
 
         document.addEventListener("visibilitychange", function() {
-            if (!document.hidden) cargarRecuerdos();
+            if (!document.hidden) cargarDatosDesdeDrive();
         });
     </script>
 </body>
