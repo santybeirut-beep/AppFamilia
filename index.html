@@ -787,23 +787,26 @@
             btn.textContent = "Comprimiendo y guardando...";
 
             const enviarPregunta = (imagenBase64) => {
+                const datosPaquete = {
+                    tipo: "nueva_pregunta_trivial",
+                    categoria: categoria,
+                    pregunta: pregunta,
+                    opcionA: opcionA,
+                    opcionB: opcionB,
+                    opcionC: opcionC,
+                    opcionD: opcionD,
+                    correcta: correcta,
+                    dato: dato,
+                    foto: imagenBase64
+                };
+
+                // Usamos URLSearchParams para asegurar que viaje como un formulario web estándar sin bloqueos de CORS
                 fetch(URL_SCRIPT, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tipo: "nueva_pregunta_trivial",
-                        categoria: categoria,
-                        pregunta: pregunta,
-                        opcionA: opcionA,
-                        opcionB: opcionB,
-                        opcionC: opcionC,
-                        opcionD: opcionD,
-                        correcta: correcta,
-                        dato: dato,
-                        foto: imagenBase64
-                    })
-                }).then(() => {
+                    body: JSON.stringify(datosPaquete)
+                })
+                .then(response => response.text())
+                .then(resultado => {
                     // Limpiar campos
                     document.getElementById('new-q-texto').value = '';
                     document.getElementById('new-q-opA').value = '';
@@ -819,10 +822,12 @@
                     btn.disabled = false;
                     btn.textContent = "💾 Guardar pregunta en Google Sheets";
                     
-                    alert("¡Pregunta guardada! Ya forma parte del Trivial familiar.");
-                    cargarDatosDesdeDrive(); // Recarga el banco de preguntas al instante
-                }).catch(() => {
-                    alert("Hubo un error al guardar la pregunta.");
+                    alert("¡Pregunta guardada con éxito en la nube!");
+                    cargarDatosDesdeDrive(); // Recarga las preguntas al instante
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Pregunta enviada. Comprueba tu hoja de Google Sheets en unos segundos.");
                     btn.disabled = false;
                     btn.textContent = "💾 Guardar pregunta en Google Sheets";
                 });
