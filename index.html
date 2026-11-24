@@ -411,31 +411,45 @@
     
             const imgFoto = document.getElementById('trivia-foto');
             const audioPlayer = document.getElementById('trivia-audio');
-    
-        // Limpiar y pausar cualquier audio o foto anterior
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            audioPlayer.style.display = 'none';
-            audioPlayer.src = '';
-            imgFoto.style.display = 'none';
-            imgFoto.src = '';
 
-            const media = actual.foto ? actual.foto.trim() : "";
+            // 🛑 1. Limpiamos y pausamos cualquier audio anterior por seguridad
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
 
-            if (media !== "") {
-        // Comprobamos si es audio (Base64 de audio, extensión de audio o enlace directo de audio)
-                const esAudio = media.startsWith('data:audio') || 
-                            /\.(mp3|wav|ogg|m4a|aac)(\?.*)?$/i.test(media) ||
-                            media.includes('export=download');
+            // 🎵 2. Comprobamos si la propiedad 'foto' (o multimedia) contiene un audio o una imagen
+            const contenidoMultimedia = actual.foto || ""; // En tu sheet la columna se llama foto pero guarda ambos
+
+            if (contenidoMultimedia) {
+                // Detectamos si es un audio en Base64 (empieza por data:audio) o enlace de audio
+                const esAudio = contenidoMultimedia.startsWith('data:audio') || /\.(mp3|wav|ogg|m4a)$/i.test(contenidoMultimedia);
 
                 if (esAudio) {
-                    audioPlayer.src = media;
+                    // Si es audio: ocultamos la foto y mostramos el reproductor musical
+                    imgFoto.style.display = 'none';
+                    imgFoto.src = '';
+                    
+                    audioPlayer.src = contenidoMultimedia;
                     audioPlayer.style.display = 'block';
                 } else {
-                    imgFoto.src = media;
+                    // Si es imagen: ocultamos el reproductor y mostramos la foto controlada por CSS
+                    audioPlayer.style.display = 'none';
+                    audioPlayer.src = '';
+
                     imgFoto.style.display = 'block';
+                    imgFoto.src = contenidoMultimedia;
                 }
+            } else {
+                // Si no hay nada, ocultamos ambos elementos multimedia
+                imgFoto.style.display = 'none';
+                imgFoto.src = '';
+                audioPlayer.style.display = 'none';
+                audioPlayer.src = '';
             }
+
+            // ... resto de tu código para pintar las opciones y el botón siguiente ...
+        }
 
     const cajaDato = document.getElementById('trivia-dato');
     cajaDato.style.display = 'none';
@@ -655,7 +669,8 @@
                     return;
                 }
 
-                datos.reverse().forEach(item => {
+                // 🔄 Recorremos los datos normalmente y anteponemos cada mensaje nuevo arriba del todo
+                datos.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'card';
                     div.innerHTML = `
@@ -667,7 +682,8 @@
                         <p class="post-text">${item.texto}</p>
                         ${item.imagen ? `<img src="${item.imagen}" class="post-img">` : ''}
                     `;
-                    muro.appendChild(div);
+                    // insertBefore coloca siempre el nuevo elemento en la primera posición (arriba del todo)
+                    muro.insertBefore(div, muro.firstChild);
                 });
             } catch (error) {
                 muro.innerHTML = '<div class="loader">Error al conectar con Google Drive.</div>';
