@@ -742,27 +742,37 @@
         async function enviarDatosAlServidor(payload) {
             const btn = document.getElementById('btnEnviar');
             try {
+                // 1. Enviamos los datos al servidor (Apps Script)
                 await fetch(URL_SCRIPT, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
+                // 2. Limpiamos los campos del formulario inmediatamente
                 document.getElementById('mensaje').value = '';
                 document.getElementById('lugar').value = '';
                 document.getElementById('fotoInput').value = '';
                 document.getElementById('nombreFoto').textContent = '';
 
+                // Cambiamos el texto del botón para indicar que está sincronizando
+                btn.textContent = "Sincronizando tablón...";
+
+                // 3. Damos 3 segundos de margen para que Google Sheets termine de escribir el registro
                 setTimeout(() => {
-                    cargarDatosDesdeDrive();
+                    cargarDatosDesdeDrive(); // Vuelve a descargar el muro ya actualizado
                     btn.disabled = false;
                     btn.textContent = "Publicar en el tablón";
-                }, 1500);
+                }, 3000); // ⏱️ Subido a 3 segundos para darle tiempo a Google Sheets
+
             } catch (error) {
+                console.error("Error:", error);
                 alert("Hubo un problema al guardar. Inténtalo de nuevo.");
                 btn.disabled = false;
                 btn.textContent = "Publicar en el tablón";
             }
+        }
         }
 
         function comprobarIdentidad() {
