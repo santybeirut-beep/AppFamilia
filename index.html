@@ -276,6 +276,47 @@
                 🔄 Jugar otra partida nueva
             </button>
         </div>
+   
+        <!-- Botón y formulario desplegable para añadir preguntas nuevas -->
+        <div style="margin-top: 20px;">
+            <button class="btn-send" style="background: #5856D6;" onclick="toggleCreadorTrivial()">
+                ➕ Añadir pregunta nueva (con foto)
+            </button>
+        </div>
+
+        <div class="card" id="caja-creador-trivial" style="display: none; margin-top: 12px;">
+            <h3 style="margin-top: 0; font-size: 17px;">Nueva pregunta para el Trivial</h3>
+            
+            <input type="text" id="new-q-cat" placeholder="Categoría (ej. Fotos familiares, Viajes...)">
+            <textarea id="new-q-texto" rows="2" placeholder="Escribe la pregunta..."></textarea>
+            
+            <input type="text" id="new-q-opA" placeholder="Opción 1 (A)">
+            <input type="text" id="new-q-opB" placeholder="Opción 2 (B)">
+            <input type="text" id="new-q-opC" placeholder="Opción 3 (C)">
+            <input type="text" id="new-q-opD" placeholder="Opción 4 (D)">
+            
+            <select id="new-q-correcta" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #E5E5EA; margin-bottom: 10px; background: #F9F9FB; font-size: 15px;">
+                <option value="">-- ¿Cuál es la respuesta correcta? --</option>
+                <option value="1">La Opción 1 (A)</option>
+                <option value="2">La Opción 2 (B)</option>
+                <option value="3">La Opción 3 (C)</option>
+                <option value="4">La Opción 4 (D)</option>
+            </select>
+
+            <input type="text" id="new-q-dato" placeholder="💡 Dato curioso al responder (opcional)">
+            
+            <div class="form-row">
+                <label class="file-label" style="width: 100%; text-align: center;">
+                    📷 Adjuntar foto (se comprime sola)
+                    <input type="file" id="new-q-foto" accept="image/*">
+                </label>
+            </div>
+            <div id="new-q-nombreFoto" style="font-size: 12px; color: var(--primary); margin-bottom: 10px; text-align: center;"></div>
+
+            <button id="btn-guardar-trivial" class="btn-send" style="background: var(--success);" onclick="guardarPreguntaTrivial()">
+                💾 Guardar pregunta en Google Sheets
+            </button>
+        </div>
     </div>
 
     <script>
@@ -714,6 +755,88 @@
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden) cargarDatosDesdeDrive();
         });
+// ==================== CREADOR DE PREGUNTAS DESDE LA APP ====================
+        document.getElementById('new-q-foto').addEventListener('change', function(e) {
+            const nombre = e.target.files[0] ? e.target.files[0].name : '';
+            document.getElementById('new-q-nombreFoto').textContent = nombre ? 'Foto lista: ' + nombre : '';
+        });
+
+        function toggleCreadorTrivial() {
+            const caja = document.getElementById('caja-creador-trivial');
+            caja.style.display = (caja.style.display === 'none') ? 'block' : 'none';
+        }
+
+        function guardarPreguntaTrivial() {
+            const categoria = document.getElementById('new-q-cat').value.trim() || "Familia";
+            const pregunta = document.getElementById('new-q-texto').value.trim();
+            const opcionA = document.getElementById('new-q-opA').value.trim();
+            const opcionB = document.getElementById('new-q-opB').value.trim();
+            const opcionC = document.getElementById('new-q-opC').value.trim();
+            const opcionD = document.getElementById('new-q-opD').value.trim();
+            const correcta = document.getElementById('new-q-correcta').value;
+            const dato = document.getElementById('new-q-dato').value.trim();
+            const fotoFile = document.getElementById('new-q-foto').files[0];
+
+            if (!pregunta || !opcionA || !opcionB || !opcionC || !opcionD || !correcta) {
+                alert("Por favor, rellena la pregunta, las 4 opciones y elige cuál es la correcta.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-guardar-trivial');
+            btn.disabled = true;
+            btn.textContent = "Comprimiendo y guardando...";
+
+            const enviarPregunta = (imagenBase64) => {
+                fetch(URL_SCRIPT, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: "nueva_pregunta_trivial",
+                        categoria: categoria,
+                        pregunta: pregunta,
+                        opcionA: opcionA,
+                        opcionB: opcionB,
+                        opcionC: opcionC,
+                        opcionD: opcionD,
+                        correcta: correcta,
+                        dato: dato,
+                        foto: imagenBase64
+                    })
+                }).then(() => {
+                    // Limpiar campos
+                    document.getElementById('new-q-texto').value = '';
+                    document.getElementById('new-q-opA').value = '';
+                    document.getElementById('new-q-opB').value = '';
+                    document.getElementById('new-q-opC').value = '';
+                    document.getElementById('new-q-opD').value = '';
+                    document.getElementById('new-q-correcta').value = '';
+                    document.getElementById('new-q-dato').value = '';
+                    document.getElementById('new-q-foto').value = '';
+                    document.getElementById('new-q-nombreFoto').textContent = '';
+                    
+                    document.getElementById('caja-creador-trivial').style.display = 'none';
+                    btn.disabled = false;
+                    btn.textContent = "💾 Guardar pregunta en Google Sheets";
+                    
+                    alert("¡Pregunta guardada! Ya forma parte del Trivial familiar.");
+                    cargarDatosDesdeDrive(); // Recarga el banco de preguntas al instante
+                }).catch(() => {
+                    alert("Hubo un error al guardar la pregunta.");
+                    btn.disabled = false;
+                    btn.textContent = "💾 Guardar pregunta en Google Sheets";
+                });
+            };
+
+            if (fotoFile) {
+                comprimirImagen(fotoFile, 450, (imagenBase64) => {
+                    enviarPregunta(imagenBase64);
+                });
+            } else {
+                enviarPregunta("");
+            }
+        }
+        
     </script>
 </body>
 </html>
