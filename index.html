@@ -669,7 +669,8 @@
                     return;
                 }
 
-                // 🔄 Recorremos los datos normalmente y anteponemos cada mensaje nuevo arriba del todo
+                // 🤝 Como Google Drive ya nos manda lo nuevo primero, 
+                // un bucle limpio con appendChild coloca cada uno en su sitio exacto.
                 datos.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'card';
@@ -682,8 +683,7 @@
                         <p class="post-text">${item.texto}</p>
                         ${item.imagen ? `<img src="${item.imagen}" class="post-img">` : ''}
                     `;
-                    // insertBefore coloca siempre el nuevo elemento en la primera posición (arriba del todo)
-                    muro.insertBefore(div, muro.firstChild);
+                    muro.appendChild(div);
                 });
             } catch (error) {
                 muro.innerHTML = '<div class="loader">Error al conectar con Google Drive.</div>';
