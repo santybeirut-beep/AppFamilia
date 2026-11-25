@@ -651,14 +651,24 @@
         }
         async function cargarDatosDesdeDrive() {
             const muro = document.getElementById('muro');
+            console.log("🔍 [EQUIPO] Iniciando petición fetch a la URL del script...");
+            
             try {
                 const respuesta = await fetch(URL_SCRIPT);
-                const paquete = await respuesta.json();
+                console.log("📡 [EQUIPO] Estado de la respuesta HTTP:", respuesta.status, respuesta.statusText);
                 
-                // 1. Actualizar tema del día
-                if (paquete.pregunta) document.getElementById('preguntaTexto').textContent = paquete.pregunta;
+                const textoPlano = await respuesta.text();
+                console.log("📄 [EQUIPO] Longitud del texto recibido:", textoPlano.length);
+                console.log("📄 [EQUIPO] Primeros 100 caracteres del texto:", textoPlano.substring(0, 100));
+
+                const paquete = JSON.parse(textoPlano);
+                console.log("✅ [EQUIPO] JSON parseado con éxito:", paquete);
+
+                // Si llega hasta aquí, los datos están en nuestras manos
+                if (paquete.pregunta) {
+                    document.getElementById('preguntaTexto').textContent = paquete.pregunta;
+                }
                 
-                // 2. Cargar banco de preguntas del Trivial desde Google Sheets
                 if (paquete.trivial && paquete.trivial.length > 0) {
                     bancoCompletoTrivial = paquete.trivial;
                     datosCargadosDeSheets = true;
@@ -667,12 +677,7 @@
                     }
                 }
 
-                // 3. Cargar recuerdos del Tablón
                 const datos = paquete.recuerdos || [];
-                if (totalMensajesAnterior !== -1 && datos.length > totalMensajesAnterior) {
-                    reproducirCampanita();
-                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                }
                 totalMensajesAnterior = datos.length;
                 muro.innerHTML = '';
                 
@@ -681,8 +686,6 @@
                     return;
                 }
 
-                // 🤝 Como Google Drive ya nos manda lo nuevo primero, 
-                // un bucle limpio con appendChild coloca cada uno en su sitio exacto.
                 datos.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'card';
@@ -697,8 +700,10 @@
                     `;
                     muro.appendChild(div);
                 });
+
             } catch (error) {
-                muro.innerHTML = '<div class="loader">Error al conectar con Google Drive.</div>';
+                console.error("❌ [EQUIPO] ¡Error crítico atrapado!", error);
+                muro.innerHTML = `<div class="loader" style="color: red;">⚠️ Error al cargar: ${error.message}</div>`;
             }
         }
 
