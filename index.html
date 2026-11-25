@@ -519,6 +519,8 @@
             document.getElementById('caja-resultado').style.display = 'block';
 
             const total = partidaActual.length;
+    
+            // Usamos el usuario que ya tenéis guardado en el localStorage de la app
             const autor = localStorage.getItem('appFamilia_usuario') || 'Jugador';
             document.getElementById('texto-puntuacion').textContent = `${autor}: ${puntuacionActual} de ${total} aciertos`;
 
@@ -531,42 +533,71 @@
                 mensaje = "¡Buen calentamiento! Toca revancha para escalar puestos en la familia 😉";
             }
             document.getElementById('mensaje-rango').textContent = mensaje;
+
+            // 🏆 ¡AQUÍ ESTÁ EL TOQUE MÁGICO! 
+            // Llamamos a nuestra función para registrar la puntuación y cargar el ranking al terminar
+            if (typeof prepararGuardadoRanking === 'function') {
+                prepararGuardadoRanking(puntuacionActual, total);
+            }
         }
 
         function publicarResultadoEnTablon() {
             const autor = localStorage.getItem('appFamilia_usuario') || 'Anónimo';
             const total = partidaActual.length;
             const btn = document.getElementById('btn-compartir-puntos');
-            
-            btn.disabled = true;
-            btn.textContent = "Publicando resultado...";
+    
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "Guardando en el Ranking...";
+            }
 
             const ahora = new Date();
             const fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ', ' + 
-                                    ahora.getHours().toString().padStart(2, '0') + ':' + 
-                                    ahora.getMinutes().toString().padStart(2, '0');
+                            ahora.getHours().toString().padStart(2, '0') + ':' + 
+                            ahora.getMinutes().toString().padStart(2, '0');
 
+            // 1. Guardar en la pestaña Puntuaciones para el Salón de la Fama
+            const datosRanking = {
+                tipo: "guardarPuntuacion",
+                jugador: autor,
+                aciertos: puntuacionActual,
+                total: total
+            };
+
+            // 2. Texto para el tablón (por si queréis que también se publique en el muro)
             const textoResultado = `🎯 ¡Acabo de jugar al Trivial Familiar y he sacado ${puntuacionActual} de ${total} aciertos! ¿Quién supera mi marca? 🏆`;
 
+            // Mandamos primero la puntuación al ranking
             fetch(URL_SCRIPT, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fecha: fechaFormateada,
-                    autor: autor,
-                    lugar: "Trivial Familiar",
-                    texto: textoResultado,
-                    imagen: ""
-                })
+                body: JSON.stringify(datosRanking)
+            }).then(() => {
+                // Opcional: Mandamos también el mensaje al tablón de recuerdos si queréis conservar la tradición
+                return fetch(URL_SCRIPT, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fecha: fechaFormateada,
+                        autor: autor,
+                        lugar: "Trivial Familiar",
+                        texto: textoResultado,
+                        imagen: ""
+                    })
+               });
             }).then(() => {
                 setTimeout(() => {
                     cambiarVista('tablon');
                     cargarDatosDesdeDrive();
                 }, 1200);
             }).catch(() => {
-                alert("No se pudo publicar el resultado.");
-                btn.disabled = false;
+                alert("No se pudo guardar el resultado.");
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = "Compartir Resultado";
+                }
             });
         }
 
