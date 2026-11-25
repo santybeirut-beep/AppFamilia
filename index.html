@@ -419,21 +419,18 @@
             }
 
             // 🎵 2. Comprobamos si la propiedad 'foto' (o multimedia) contiene un audio o una imagen
-            const contenidoMultimedia = actual.foto || ""; // En tu sheet la columna se llama foto pero guarda ambos
+            const contenidoMultimedia = actual.foto || "";
 
             if (contenidoMultimedia) {
-                // Detectamos si es un audio en Base64 (empieza por data:audio) o enlace de audio
                 const esAudio = contenidoMultimedia.startsWith('data:audio') || /\.(mp3|wav|ogg|m4a)$/i.test(contenidoMultimedia);
 
                 if (esAudio) {
-                    // Si es audio: ocultamos la foto y mostramos el reproductor musical
                     imgFoto.style.display = 'none';
                     imgFoto.src = '';
                     
                     audioPlayer.src = contenidoMultimedia;
                     audioPlayer.style.display = 'block';
                 } else {
-                    // Si es imagen: ocultamos el reproductor y mostramos la foto controlada por CSS
                     audioPlayer.style.display = 'none';
                     audioPlayer.src = '';
 
@@ -441,14 +438,29 @@
                     imgFoto.src = contenidoMultimedia;
                 }
             } else {
-                // Si no hay nada, ocultamos ambos elementos multimedia
                 imgFoto.style.display = 'none';
                 imgFoto.src = '';
                 audioPlayer.style.display = 'none';
                 audioPlayer.src = '';
             }
 
-            // ... resto de tu código para pintar las opciones y el botón siguiente ...
+            const cajaDato = document.getElementById('trivia-dato');
+            cajaDato.style.display = 'none';
+            cajaDato.textContent = '';
+
+            const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
+            btnSiguiente.style.display = 'none';
+
+            const contenedorOpciones = document.getElementById('trivia-opciones');
+            contenedorOpciones.innerHTML = '';
+
+            actual.opciones.forEach((textoOpcion, index) => {
+                const boton = document.createElement('button');
+                boton.className = 'trivia-option';
+                boton.textContent = textoOpcion;
+                boton.onclick = () => comprobarRespuesta(index, boton);
+                contenedorOpciones.appendChild(boton);
+            });
         }
 
     const cajaDato = document.getElementById('trivia-dato');
