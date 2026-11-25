@@ -754,7 +754,7 @@
             }
         }
 
-        aasync function enviarDatosAlServidor(payload) {
+        async function enviarDatosAlServidor(payload) {
             const btn = document.getElementById('btnEnviar');
             try {
                 // 1. Enviamos los datos sin cabeceras restrictivas para evitar el bloqueo no-cors
