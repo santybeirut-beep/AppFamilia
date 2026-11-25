@@ -463,24 +463,6 @@
             });
         }
 
-    const cajaDato = document.getElementById('trivia-dato');
-    cajaDato.style.display = 'none';
-    cajaDato.textContent = '';
-
-    const btnSiguiente = document.getElementById('btn-siguiente-pregunta');
-    btnSiguiente.style.display = 'none';
-
-    const contenedorOpciones = document.getElementById('trivia-opciones');
-    contenedorOpciones.innerHTML = '';
-
-    actual.opciones.forEach((textoOpcion, index) => {
-        const boton = document.createElement('button');
-        boton.className = 'trivia-option';
-        boton.textContent = textoOpcion;
-        boton.onclick = () => comprobarRespuesta(index, boton);
-        contenedorOpciones.appendChild(boton);
-    });
-}
         function comprobarRespuesta(indiceElegido, botonPulsado) {
             const actual = partidaActual[indicePreguntaActual];
             const todosLosBotones = document.querySelectorAll('.trivia-option');
