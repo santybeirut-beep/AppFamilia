@@ -553,11 +553,8 @@
             }
             document.getElementById('mensaje-rango').textContent = mensaje;
 
-            // 🏆 ¡AQUÍ ESTÁ EL TOQUE MÁGICO! 
-            // Llamamos a nuestra función para registrar la puntuación y cargar el ranking al terminar
-            if (typeof prepararGuardadoRanking === 'function') {
-                prepararGuardadoRanking(puntuacionActual, total);
-            }
+            // 🏆 Cargamos el ranking automáticamente al mostrar el resultado
+            cargarRankingFamiliar();
         }
 
         function publicarResultadoEnTablon() {
@@ -595,6 +592,7 @@
                     if (typeof cargarDatosDesdeDrive === 'function') {
                         cargarDatosDesdeDrive();
                     }
+                    cargarRankingFamiliar();
                 }, 2000);
             })
             .catch((error) => {
@@ -924,6 +922,7 @@
         window.onload = function() {
             comprobarIdentidad();
             cargarDatosDesdeDrive();
+            cargarRankingFamiliar();
             setInterval(() => {
                 if (document.getElementById('vista-tablon').style.display !== 'none') {
                     cargarDatosDesdeDrive();
