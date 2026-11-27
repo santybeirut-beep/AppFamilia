@@ -556,43 +556,37 @@
                             ahora.getHours().toString().padStart(2, '0') + ':' + 
                             ahora.getMinutes().toString().padStart(2, '0');
 
-            // 1. Guardar en la pestaña Puntuaciones para el Salón de la Fama
-            const datosRanking = {
+            // Preparamos el payload exacto para que el Apps Script lo detecte como puntuación
+            const payload = {
                 tipo: "guardarPuntuacion",
                 jugador: autor,
                 aciertos: puntuacionActual,
                 total: total
             };
 
-            // 2. Texto para el tablón (por si queréis que también se publique en el muro)
-            const textoResultado = `🎯 ¡Acabo de jugar al Trivial Familiar y he sacado ${puntuacionActual} de ${total} aciertos! ¿Quién supera mi marca? 🏆`;
-
-            // Mandamos primero la puntuación al ranking
+            // Usamos el mismo método directo de fetch que sabemos que no falla
             fetch(URL_SCRIPT, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosRanking)
-            }).then(() => {
-                // Opcional: Mandamos también el mensaje al tablón de recuerdos si queréis conservar la tradición
-                return fetch(URL_SCRIPT, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fecha: fechaFormateada,
-                        autor: autor,
-                        lugar: "Trivial Familiar",
-                        texto: textoResultado,
-                        imagen: ""
-                    })
-               });
-            }).then(() => {
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
                 setTimeout(() => {
-                    cambiarVista('tablon');
-                    cargarDatosDesdeDrive();
-                }, 1200);
-            }).catch(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = "Compartir Resultado";
+                    }
+                    // Cambiamos a la vista del ranking o del tablón para que veas el resultado
+                    if (typeof cambiarVista === 'function') {
+                        cambiarVista('tablon');
+                    }
+                    if (typeof cargarDatosDesdeDrive === 'function') {
+                        cargarDatosDesdeDrive();
+                    }
+                }, 1500);
+            })
+            .catch((error) => {
+                console.error("Error al guardar la puntuación:", error);
                 alert("No se pudo guardar el resultado.");
                 if (btn) {
                     btn.disabled = false;
